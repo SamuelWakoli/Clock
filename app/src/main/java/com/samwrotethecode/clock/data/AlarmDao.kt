@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.data
+package com.samwrotethecode.clock.data
 
 import androidx.room.Dao
 import androidx.room.Delete

@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.data
+package com.samwrotethecode.clock.data
 
 import android.content.Context
 import androidx.room.Database
