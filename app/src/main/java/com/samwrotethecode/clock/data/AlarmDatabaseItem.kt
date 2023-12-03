@@ -9,7 +9,7 @@ data class AlarmDatabaseItem(
     val id: Int = 0,
     val hour: Int,
     val minute: Int,
-    val title: String,
+    val label: String?,
     val isActive: Boolean,
     val days: String,
 )

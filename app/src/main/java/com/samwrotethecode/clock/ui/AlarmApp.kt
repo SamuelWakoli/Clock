@@ -5,7 +5,7 @@ import com.samwrotethecode.clock.data.AlarmAppContainer
 import com.samwrotethecode.clock.data.AppContainer
 
 class AlarmApp : Application() {
-    private lateinit var container: AppContainer
+    lateinit var container: AppContainer
 
     override fun onCreate() {
         super.onCreate()
