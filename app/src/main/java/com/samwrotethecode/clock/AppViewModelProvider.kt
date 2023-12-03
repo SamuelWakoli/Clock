@@ -2,13 +2,18 @@ package com.samwrotethecode.clock
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.samwrotethecode.clock.ui.AlarmApp
+import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
-        // TODO: Add initializers here
+        initializer {
+            AlarmViewModel(alarmRepository = alarmApp().container.alarmRepository)
+        }
 
+        //Add other initializers here
     }
 }
 
