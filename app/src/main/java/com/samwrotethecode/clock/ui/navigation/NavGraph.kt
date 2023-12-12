@@ -7,8 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.samwrotethecode.clock.AppViewModelProvider
-import com.samwrotethecode.clock.ui.presentation.add_alarm.AddAlarmScreen
+import com.samwrotethecode.clock.ui.presentation.viewmodels.AppViewModelProvider
 import com.samwrotethecode.clock.ui.presentation.alarm_screen.AlarmScreen
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
 
@@ -26,14 +25,6 @@ fun NavGraph(navController: NavHostController) {
                 viewModel = alarmViewModel,
             )
         }
-
-        composable(route = Screens.AddAlarmScreen.route) {
-            AddAlarmScreen(
-                navController = navController,
-                viewModel = alarmViewModel,
-            )
-        }
-
     }
 }
 
