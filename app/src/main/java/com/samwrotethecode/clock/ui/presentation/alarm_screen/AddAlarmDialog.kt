@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAlarm
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -23,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
@@ -47,43 +47,49 @@ fun AddAlarmDialog(
 
     val coroutineScope = rememberCoroutineScope()
 
-    AlertDialog(onDismissRequest = { onDismissRequest() }) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Default.AddAlarm,
-                contentDescription = null,
-                modifier = Modifier.padding(8.dp)
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        Card (
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+            modifier = Modifier.padding(8.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
             )
-            TimePicker(state = timePickerState, modifier = Modifier.padding(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.End
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
             ) {
-                TextButton(onClick = { onDismissRequest() }) {
-                    Text(text = "Cancel")
-                }
-                TextButton(onClick = {
-                    onDismissRequest()
-                    coroutineScope.launch {
-                        viewModel.addAlarm(
-                            alarm = AlarmDatabaseItem(
-                                label = null,
-                                hour = timePickerState.hour,
-                                minute = timePickerState.minute,
-                                isActive = true,
-                                days = "0000000",
-                            )
-                        )
-                    }.invokeOnCompletion {
-                        Toast.makeText(context, "Alarm added", Toast.LENGTH_SHORT).show()
+                TimePicker(state = timePickerState)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { onDismissRequest() }) {
+                        Text(text = "Cancel")
                     }
-                }) {
-                    Text(text = "Save")
+                    TextButton(onClick = {
+                        onDismissRequest()
+                        coroutineScope.launch {
+                            viewModel.addAlarm(
+                                alarm = AlarmDatabaseItem(
+                                    label = null,
+                                    hour = timePickerState.hour,
+                                    minute = timePickerState.minute,
+                                    isActive = true,
+                                    days = "0000000",
+                                )
+                            )
+                        }.invokeOnCompletion {
+                            Toast.makeText(context, "Alarm added", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text(text = "Save")
+                    }
                 }
             }
         }
