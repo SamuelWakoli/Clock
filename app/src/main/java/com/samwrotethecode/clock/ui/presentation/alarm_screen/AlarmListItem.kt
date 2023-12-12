@@ -35,9 +35,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.samwrotethecode.clock.AppViewModelProvider
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
+import com.samwrotethecode.clock.ui.presentation.viewmodels.AppViewModelProvider
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
