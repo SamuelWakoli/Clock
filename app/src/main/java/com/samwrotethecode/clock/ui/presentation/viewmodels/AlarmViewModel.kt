@@ -37,19 +37,20 @@ class AlarmViewModel(val alarmRepository: AlarmRepository) : ViewModel() {
 
     suspend fun addAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.insertAlarm(alarm)
+        // TODO: Schedule alarm here
     }
 
     suspend fun updateAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.updateAlarm(alarm)
+        // TODO: un-schedule and reschedule alarm
     }
 
     suspend fun deleteAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.deleteAlarm(alarm)
+        // TODO: un-schedule alarm
     }
 
     fun setCurrentAlarm(alarm: AlarmDatabaseItem?) = _uiState.update {
         it.copy(currentAlarm = alarm)
     }
-
-
 }
