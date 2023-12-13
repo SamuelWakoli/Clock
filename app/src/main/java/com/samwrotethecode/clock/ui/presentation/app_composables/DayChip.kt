@@ -3,7 +3,6 @@ package com.samwrotethecode.clock.ui.presentation.app_composables
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
@@ -21,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,14 +28,23 @@ fun DayChip(
     label: String,
     dayIndex: Int,
     selected: Boolean,
-    onClick: () -> Unit,
+    onClick: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val dayFullName = when (dayIndex) {
+        0 -> "Sunday"
+        1 -> "Monday"
+        2 -> "Tuesday"
+        3 -> "Wednesday"
+        4 -> "Thursday"
+        5 -> "Friday"
+        6 -> "Saturday"
+        else -> "Unknown"
+    }
 
     Card(
         shape = CircleShape,
-        modifier = Modifier.padding(2.dp),
         border = CardDefaults.outlinedCardBorder(),
         colors = CardDefaults.cardColors(
             containerColor =
@@ -43,26 +52,17 @@ fun DayChip(
             else MaterialTheme.colorScheme.surface,
         ),
         onClick = {
-            val dayFullName = when (dayIndex) {
-                0 -> "Sunday"
-                1 -> "Monday"
-                2 -> "Tuesday"
-                3 -> "Wednesday"
-                4 -> "Thursday"
-                5 -> "Friday"
-                6 -> "Saturday"
-                else -> "Unknown"
+            coroutineScope.launch {
+                onClick(!selected) // using not selected to update database
+            }.invokeOnCompletion {
+                if (!selected)
+                    Toast.makeText(context, "Alarm will repeat on $dayFullName", Toast.LENGTH_SHORT)
+                        .show()
             }
-
-            onClick()
-
-            if (selected)
-                Toast.makeText(context, "Alarm will repeat on $dayFullName", Toast.LENGTH_SHORT)
-                    .show()
         }
     ) {
         Box(
-            modifier = Modifier.size(36.dp),
+            modifier = Modifier.size(30.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
