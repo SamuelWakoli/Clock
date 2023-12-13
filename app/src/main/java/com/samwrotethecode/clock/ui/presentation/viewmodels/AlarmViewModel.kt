@@ -35,6 +35,7 @@ class AlarmViewModel(val alarmRepository: AlarmRepository) : ViewModel() {
     private var _uiState = MutableStateFlow(AlarmScreenUiState())
     val uiState = _uiState.asStateFlow()
 
+    //TODO: NOTE THAT alarm.days WILL BE ALWAYS CHECKED IN BROADCAST RECEIVER
     suspend fun addAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.insertAlarm(alarm)
         // TODO: Schedule alarm here

@@ -39,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
+import com.samwrotethecode.clock.ui.presentation.app_composables.AlarmListItem
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AppViewModelProvider
 
@@ -88,18 +89,27 @@ fun AlarmScreen(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.AlarmOff, contentDescription = null,
-                        modifier = Modifier.size(92.dp)
+                        imageVector = Icons.Outlined.AlarmOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(92.dp),
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(modifier = Modifier.size(16.dp))
-                    Text(text = "No alarm added", style = MaterialTheme.typography.titleLarge)
-                    Text(text = buildAnnotatedString {
-                        append("Click ")
-                        withStyle(style = SpanStyle(fontSize = MaterialTheme.typography.titleMedium.fontSize)) {
-                            append("+")
-                        }
-                        append(" to add an alarm")
-                    })
+                    Text(
+                        text = "No alarm added",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Click ")
+                            withStyle(style = SpanStyle(fontSize = MaterialTheme.typography.titleMedium.fontSize)) {
+                                append("+")
+                            }
+                            append(" to add an alarm")
+                        },
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                     Spacer(modifier = Modifier.size(16.dp))
                 }
             } else {
@@ -116,7 +126,7 @@ fun AlarmScreen(
 
             if (showAddAlarmDialog) AddAlarmDialog(
                 is24Hour = is24HourFormat,
-                onDismissRequest = {showAddAlarmDialog = false},
+                onDismissRequest = { showAddAlarmDialog = false },
                 viewModel = viewModel,
             )
         }

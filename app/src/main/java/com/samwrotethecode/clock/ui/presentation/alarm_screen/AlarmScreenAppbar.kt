@@ -9,6 +9,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,11 +37,15 @@ fun AlarmScreenAppbar(
     }
 
     TopAppBar(
-        title = { Text(text = "Alarm") },
+        title = { Text(text = "Alarm", color = MaterialTheme.colorScheme.primary) },
         actions = {
             PlainTooltipBox(tooltip = { Text(text = "More") }) {
                 IconButton(onClick = { showDropMenu = true }) {
-                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
                     DropdownMenu(
                         expanded = showDropMenu,
                         onDismissRequest = { showDropMenu = false }) {
