@@ -15,40 +15,51 @@ fun DaysOfWeekText(
     fontSize: TextUnit = style.fontSize,
     fontWeight: FontWeight? = style.fontWeight,
 ) {
+    val daysText: String
     val days = mutableListOf<String>()
 
-    alarm.days.forEachIndexed { index, c ->
-        if (c == '1')
-            when (index) {
-                0 -> days + "Sun, "
-                1 -> days + "Mon, "
-                2 -> days + "Tue, "
-                3 -> days + "Wed, "
-                4 -> days + "Thu, "
-                5 -> days + "Fri, "
-                6 -> days + "Sat, "
-                else -> {
-
+    if (alarm.days == "0000000" && !alarm.isActive) daysText = "Not scheduled"
+    else if (alarm.days != "0000000" && !alarm.isActive) daysText = "Not scheduled"
+    else if (alarm.days == "1111111") daysText = "Repeats daily"
+    else if (alarm.days == "0111110") daysText = "Repeats weekdays"
+    else if (alarm.days == "1000001") daysText = "Repeats weekends"
+    else if (alarm.days == "0000000") daysText = "Today"
+    else {
+        alarm.days.forEachIndexed { index, c ->
+            if (c == '1')
+                when (index) {
+                    0 -> days += "Sun, "
+                    1 -> days += "Mon, "
+                    2 -> days += "Tue, "
+                    3 -> days += "Wed, "
+                    4 -> days += "Thu, "
+                    5 -> days += "Fri, "
+                    6 -> days += "Sat, "
+                    else -> {
+                        // You may want to handle other cases here
+                    }
                 }
-            }
+        }
+
+        if (days.isEmpty()) {
+            daysText = "Not scheduled"
+        } else {
+            var lastDay = days.last()
+            lastDay = lastDay.trimEnd().trim(',')
+            days[days.size - 1] = lastDay
+
+            daysText = days.joinToString(separator = "")
+        }
     }
 
-    return if (days.isNotEmpty()) {
-        var lastDay = days.last()
-        lastDay = lastDay.trimEnd().trim(',')
-
-        days[days.size - 1] = lastDay
-
-        Text(
-            text = days.joinToString(),
-            style = style,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-        )
-    } else {
-        Text(text = "")
-    }
+    Text(
+        text = daysText.trimEnd(','),
+        fontSize = fontSize,
+        fontWeight = fontWeight,
+        style = style,
+    )
 }
+
 
 @Preview
 @Composable
