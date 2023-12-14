@@ -1,6 +1,7 @@
 package com.samwrotethecode.clock.ui.presentation.alarm_screen
 
 import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -55,6 +56,9 @@ fun AlarmScreen(
     var is24HourFormat by rememberSaveable {
         mutableStateOf(DateFormat.is24HourFormat(context))
     }
+    var useKeyboard by rememberSaveable {
+        mutableStateOf(false)
+    }
     var showAddAlarmDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -67,6 +71,13 @@ fun AlarmScreen(
                 is24HourFormat = is24HourFormat,
                 onClickUpdate24Hour = {
                     is24HourFormat = !is24HourFormat
+                },
+                useKeyboard = useKeyboard,
+                onClickUseKeyboard = {
+                    useKeyboard = !useKeyboard
+                    if (useKeyboard) {
+                        Toast.makeText(context, "Keyboard will be used when adding alarms", Toast.LENGTH_LONG).show()
+                    }
                 }
             )
         },
@@ -126,6 +137,7 @@ fun AlarmScreen(
 
             if (showAddAlarmDialog) AddAlarmDialog(
                 is24Hour = is24HourFormat,
+                useKeyboard = useKeyboard,
                 onDismissRequest = { showAddAlarmDialog = false },
                 viewModel = viewModel,
             )

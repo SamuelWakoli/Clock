@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ import java.time.LocalDateTime
 @Composable
 fun AddAlarmDialog(
     is24Hour: Boolean?,
+    useKeyboard: Boolean = false,
     onDismissRequest: () -> Unit,
     viewModel: AlarmViewModel,
 ) {
@@ -48,7 +50,7 @@ fun AddAlarmDialog(
     val coroutineScope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = { onDismissRequest() }) {
-        Card (
+        Card(
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -63,7 +65,8 @@ fun AddAlarmDialog(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(16.dp)
             ) {
-                TimePicker(state = timePickerState)
+                if (useKeyboard) TimeInput(state = timePickerState)
+                else TimePicker(state = timePickerState)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),

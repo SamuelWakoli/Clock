@@ -31,6 +31,8 @@ fun AlarmScreenAppbar(
     scrollBehavior: TopAppBarScrollBehavior,
     is24HourFormat: Boolean,
     onClickUpdate24Hour: () -> Unit,
+    useKeyboard: Boolean,
+    onClickUseKeyboard: () -> Unit,
 ) {
     var showDropMenu by remember {
         mutableStateOf(false)
@@ -57,6 +59,14 @@ fun AlarmScreenAppbar(
                                 showDropMenu = false
                                 onClickUpdate24Hour()
                             })
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                CircularCheckbox(checked = useKeyboard) {}
+                            },
+                            text = { Text(text = "Use keyboard") }, onClick = {
+                                showDropMenu = false
+                                onClickUseKeyboard()
+                            })
                     }
                 }
             }
@@ -75,7 +85,9 @@ private fun AlarmScreenAppbarPreview() {
         AlarmScreenAppbar(
             scrollBehavior = scrollBehavior,
             is24HourFormat = false,
-            onClickUpdate24Hour = {}
+            useKeyboard = false,
+            onClickUpdate24Hour = {},
+            onClickUseKeyboard = {},
         )
     }) { paddingValues ->
         Column(
