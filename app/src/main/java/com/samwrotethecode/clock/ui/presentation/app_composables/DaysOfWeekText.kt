@@ -21,8 +21,8 @@ fun DaysOfWeekText(
     if (alarm.days == "0000000" && !alarm.isActive) daysText = "Not scheduled"
     else if (alarm.days != "0000000" && !alarm.isActive) daysText = "Not scheduled"
     else if (alarm.days == "1111111") daysText = "Repeats daily"
-    else if (alarm.days == "0111110") daysText = "Repeats weekdays"
-    else if (alarm.days == "1000001") daysText = "Repeats weekends"
+    else if (alarm.days == "0111110") daysText = "Repeats on weekdays"
+    else if (alarm.days == "1000001") daysText = "Repeats on weekends"
     else if (alarm.days == "0000000") daysText = "Today"
     else {
         alarm.days.forEachIndexed { index, c ->
