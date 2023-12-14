@@ -1,11 +1,13 @@
 package com.samwrotethecode.clock.ui.presentation.app_composables
 
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOutSine
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -34,9 +37,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -66,6 +71,7 @@ fun AlarmListItem(
     }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
 
     Card(
@@ -84,28 +90,37 @@ fun AlarmListItem(
             .padding(vertical = 4.dp, horizontal = 8.dp),
         shape = MaterialTheme.shapes.large,
     ) {
-        ListItem(
-            colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent,
-            ),
-            overlineContent = {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(
+                modifier = Modifier.weight(9f)
+            ) {
                 if (expandedState || alarm.label != null) {
-                    Row(modifier = Modifier
-                        .clickable { /*TODO*/ }
-                        .padding(16.dp)
-                        .weight(9f)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { /*TODO*/ }
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Icon(
                             imageVector = if (alarm.label == null) Icons.Outlined.NewLabel else Icons.Outlined.Label,
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp),
                         )
                         Spacer(modifier = Modifier.size(12.dp))
-                        Text(text = alarm.label ?: "Add label")
+                        Text(
+                            text = alarm.label ?: "Add label",
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                     }
-                    Spacer(modifier = Modifier.size(4.dp))
                 }
-            },
-            headlineContent = {
+                if (alarm.label == null) Spacer(modifier = Modifier.size(8.dp))
                 Text(
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     text = buildAnnotatedString {
                         val timeExtension =
                             if (is24HourFormat) "" else if (alarm.hour < 12) "AM" else "PM"
@@ -115,10 +130,9 @@ fun AlarmListItem(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         ) {
-                            val hour =
-                                if (!is24HourFormat && alarm.hour > 12) alarm.hour - 12
-                                else if (!is24HourFormat && alarm.hour == 0) 12
-                                else alarm.hour
+                            val hour = if (!is24HourFormat && alarm.hour > 12) alarm.hour - 12
+                            else if (!is24HourFormat && alarm.hour == 0) 12
+                            else alarm.hour
                             val minute = if (alarm.minute < 10) "0${alarm.minute}" else alarm.minute
                             append("$hour:$minute")
                         }
@@ -127,80 +141,77 @@ fun AlarmListItem(
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = MaterialTheme.typography.titleLarge.fontSize,
                 )
-            },
-            trailingContent = {
+            }
+
+
+            IconButton(
+                onClick = {
+                    expandedState = !expandedState
+                    if (expandedState) viewModel.setCurrentAlarm(alarm)
+                    else viewModel.setCurrentAlarm(null)
+                },
+                modifier = Modifier
+                    .weight(2f)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+            ) {
                 Icon(
                     // Since we are using rotationState, KeyboardArrowDown will be rotated by 180 degrees
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    modifier = Modifier
-                        .rotate(rotationState)
+                    modifier = Modifier.rotate(rotationState)
                 )
-
             }
-        )
+        }
 
 
-        ListItem(
-            modifier = Modifier.height(48.dp),
-            colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent,
-            ),
-            headlineContent = { DaysOfWeekText(alarm = alarm) },
-            trailingContent = {
-                Switch(checked = isToggled, onCheckedChange = {
-                    isToggled = it
-                    coroutineScope.launch {
-                        viewModel.updateAlarm(
-                            alarm.copy(isActive = it)
-                        )
-                    }
-                })
+        ListItem(modifier = Modifier.height(48.dp), colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
+        ), headlineContent = { DaysOfWeekText(alarm = alarm) }, trailingContent = {
+            Switch(checked = isToggled, onCheckedChange = {
+                isToggled = it
+                coroutineScope.launch {
+                    viewModel.updateAlarm(
+                        alarm.copy(isActive = it)
+                    )
+                }
             })
+        })
 
 
         // This content will only be visible if expandedState is true
         if (expandedState) {
-            ListItem(
-                colors = ListItemDefaults.colors(
-                    containerColor = Color.Transparent,
-                ),
-                overlineContent = {
-                    Text(text = "Schedule")
-                },
-                headlineContent = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        alarm.days.forEachIndexed { index, c ->
-                            DayChip(
-                                label = when (index) {
-                                    0 -> "S"
-                                    1 -> "M"
-                                    2 -> "T"
-                                    3 -> "W"
-                                    4 -> "T"
-                                    5 -> "F"
-                                    6 -> "S"
-                                    else -> ""
-                                }, dayIndex = index, selected = c == '1',
-                                onClick = {
-                                    val newDays = alarm.days.toCharArray()
-                                    newDays[index] = if (it) '1' else '0'
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Text(text = "Schedule", style = MaterialTheme.typography.bodySmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center
+                ) {
+                    alarm.days.forEachIndexed { index, c ->
+                        DayChip(label = when (index) {
+                            0 -> "S"
+                            1 -> "M"
+                            2 -> "T"
+                            3 -> "W"
+                            4 -> "T"
+                            5 -> "F"
+                            6 -> "S"
+                            else -> ""
+                        }, dayIndex = index, selected = c == '1', onClick = {
+                            val newDays = alarm.days.toCharArray()
+                            newDays[index] = if (it) '1' else '0'
 
-                                    coroutineScope.launch {
-                                        viewModel.updateAlarm(
-                                            alarm.copy(
-                                                days = newDays.concatToString()
-                                            )
-                                        )
-                                    }
-                                }
-                            )
-                        }
+                            coroutineScope.launch {
+                                viewModel.updateAlarm(
+                                    alarm.copy(
+                                        days = newDays.concatToString()
+                                    )
+                                )
+                            }
+                        })
                     }
-                })
+                }
+            }
             ListItem(
                 colors = ListItemDefaults.colors(
                     containerColor = Color.Transparent,
@@ -215,26 +226,36 @@ fun AlarmListItem(
                     Text(text = "Default (Cesium)")
                 },
             )
-            ListItem(
-                colors = ListItemDefaults.colors(
-                    containerColor = Color.Transparent,
-                ),
-                leadingContent = {
-                    Icon(
-                        imageVector = Icons.Outlined.Vibration,
-                        contentDescription = null,
-                    )
-                },
-                headlineContent = {
-                    Text(text = "Vibrate")
-                },
-                trailingContent = {
-                    CircularCheckbox(checked = true) {
-                        // TODO: Implement vibration toggle
-                    }
+
+            // TODO: Implement vibration toggle
+            ListItem(colors = ListItemDefaults.colors(
+                containerColor = Color.Transparent,
+            ), leadingContent = {
+                Icon(
+                    imageVector = Icons.Outlined.Vibration,
+                    contentDescription = null,
+                )
+            }, headlineContent = {
+                Text(text = "Vibrate")
+            }, trailingContent = {
+                CircularCheckbox(checked = true) {
+                    // TODO: Implement vibration toggle
                 }
-            )
+            })
             ListItem(
+                modifier = Modifier.clickable {
+                    coroutineScope.launch {
+                        viewModel.deleteAlarm(alarm)
+                    }.invokeOnCompletion {
+                        expandedState = false
+                        viewModel.setCurrentAlarm(null)
+                        Toast.makeText(
+                            context,
+                            "Alarm deleted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                },
                 colors = ListItemDefaults.colors(
                     containerColor = Color.Transparent,
                 ),
