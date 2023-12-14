@@ -59,6 +59,7 @@ fun AlarmListItem(
     alarm: AlarmDatabaseItem,
     viewModel: AlarmViewModel,
     is24HourFormat: Boolean,
+    useKeyboard: Boolean,
 ) {
     var expandedState by rememberSaveable { mutableStateOf(false) }
     val rotationState by animateFloatAsState(
@@ -74,6 +75,9 @@ fun AlarmListItem(
     val context = LocalContext.current
 
     var showEditLabelDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+    var showEditTimeDialog by rememberSaveable {
         mutableStateOf(false)
     }
 
@@ -123,7 +127,13 @@ fun AlarmListItem(
                 }
                 if (alarm.label == null) Spacer(modifier = Modifier.size(8.dp))
                 Text(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = if (expandedState) Modifier
+                        .clickable {
+                            showEditTimeDialog = true
+
+                        }
+                        .padding(horizontal = 16.dp)
+                    else Modifier.padding(horizontal = 16.dp),
                     text = buildAnnotatedString {
                         val timeExtension =
                             if (is24HourFormat) "" else if (alarm.hour < 12) "AM" else "PM"
@@ -282,6 +292,18 @@ fun AlarmListItem(
             viewModel = viewModel
         )
     }
+
+    if (showEditTimeDialog) {
+        EditAlarmTimeDialog(
+            alarm = alarm,
+            is24Hour = is24HourFormat,
+            useKeyboard = useKeyboard,
+            onDismissRequest = {
+                showEditTimeDialog = false
+            },
+            viewModel = viewModel,
+        )
+    }
 }
 
 @Preview
@@ -298,5 +320,6 @@ private fun AlarmListItemPreview() {
         ),
         viewModel = viewModel(factory = AppViewModelProvider.Factory),
         is24HourFormat = false,
+        useKeyboard = false,
     )
 }

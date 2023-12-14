@@ -129,7 +129,8 @@ fun AlarmScreen(
                         AlarmListItem(
                             alarm = alarm,
                             viewModel = viewModel,
-                            is24HourFormat = is24HourFormat
+                            is24HourFormat = is24HourFormat,
+                            useKeyboard = useKeyboard,
                         )
                     }
                 }
