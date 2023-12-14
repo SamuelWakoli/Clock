@@ -73,6 +73,9 @@ fun AlarmListItem(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    var showEditLabelDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     Card(
         onClick = {
@@ -101,7 +104,7 @@ fun AlarmListItem(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { /*TODO*/ }
+                            .clickable { showEditLabelDialog = true }
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -270,6 +273,14 @@ fun AlarmListItem(
                 },
             )
         }
+    }
+
+    if (showEditLabelDialog) {
+        EditAlarmLabelDialog(
+            onDismissRequest = { showEditLabelDialog = false },
+            alarm = alarm,
+            viewModel = viewModel
+        )
     }
 }
 
