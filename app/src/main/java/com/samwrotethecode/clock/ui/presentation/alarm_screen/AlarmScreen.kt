@@ -124,7 +124,9 @@ fun AlarmScreen(
                     Spacer(modifier = Modifier.size(16.dp))
                 }
             } else {
-                LazyColumn {
+                LazyColumn (
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     items(alarmsList) { alarm: AlarmDatabaseItem ->
                         AlarmListItem(
                             alarm = alarm,
@@ -132,6 +134,9 @@ fun AlarmScreen(
                             is24HourFormat = is24HourFormat,
                             useKeyboard = useKeyboard,
                         )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.size(82.dp))
                     }
                 }
             }
