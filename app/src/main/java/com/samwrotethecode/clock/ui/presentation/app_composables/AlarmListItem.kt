@@ -80,6 +80,9 @@ fun AlarmListItem(
     var showEditTimeDialog by rememberSaveable {
         mutableStateOf(false)
     }
+    var showEditAlarmToneDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     Card(
         onClick = {
@@ -226,6 +229,7 @@ fun AlarmListItem(
                 }
             }
             ListItem(
+                modifier = Modifier.clickable { showEditAlarmToneDialog = true },
                 colors = ListItemDefaults.colors(
                     containerColor = Color.Transparent,
                 ),
@@ -303,6 +307,13 @@ fun AlarmListItem(
             },
             viewModel = viewModel,
         )
+    }
+
+    if (showEditAlarmToneDialog) {
+        EditAlarmToneDialog(
+            onDismissRequest = {
+                showEditAlarmToneDialog = false
+            })
     }
 }
 
