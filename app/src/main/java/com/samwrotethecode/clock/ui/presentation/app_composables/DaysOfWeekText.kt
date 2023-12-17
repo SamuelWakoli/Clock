@@ -7,6 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
+import java.time.LocalDateTime
 
 @Composable
 fun DaysOfWeekText(
@@ -15,6 +16,7 @@ fun DaysOfWeekText(
     fontSize: TextUnit = style.fontSize,
     fontWeight: FontWeight? = style.fontWeight,
 ) {
+    val currentTimeSnapshot = LocalDateTime.now()
     val daysText: String
     val days = mutableListOf<String>()
 
@@ -23,6 +25,10 @@ fun DaysOfWeekText(
     else if (alarm.days == "1111111") daysText = "Repeats daily"
     else if (alarm.days == "0111110") daysText = "Repeats on weekdays"
     else if (alarm.days == "1000001") daysText = "Repeats on weekends"
+    else if (alarm.days == "0000000" &&
+        alarm.hour < currentTimeSnapshot.hour &&
+        alarm.minute < currentTimeSnapshot.minute
+    ) daysText = "Tomorrow"
     else if (alarm.days == "0000000") daysText = "Today"
     else {
         alarm.days.forEachIndexed { index, c ->
@@ -35,9 +41,6 @@ fun DaysOfWeekText(
                     4 -> days += "Thu, "
                     5 -> days += "Fri, "
                     6 -> days += "Sat, "
-                    else -> {
-                        // You may want to handle other cases here
-                    }
                 }
         }
 
