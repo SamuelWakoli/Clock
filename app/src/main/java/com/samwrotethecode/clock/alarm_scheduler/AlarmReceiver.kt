@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.alarm_schedular
+package com.samwrotethecode.clock.alarm_scheduler
 
 import android.content.BroadcastReceiver
 import android.content.Context

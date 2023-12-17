@@ -146,11 +146,14 @@ fun AlarmListItem(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         ) {
-                            val hour = if (!is24HourFormat && alarm.hour > 12) alarm.hour - 12
-                            else if (!is24HourFormat && alarm.hour == 0) 12
-                            else alarm.hour
-                            val minute = if (alarm.minute < 10) "0${alarm.minute}" else alarm.minute
-                            append("$hour:$minute")
+                            val hour: String =
+                                if (!is24HourFormat && alarm.hour > 12) (alarm.hour - 12).toString()
+                                else if (!is24HourFormat && alarm.hour == 0) 12.toString()
+                                else alarm.hour.toString()
+
+                            val minute: String =
+                                if (alarm.minute < 10) "0${alarm.minute}" else alarm.minute.toString()
+                            append("${if (hour.length != 2) ("0$hour") else hour}:$minute")
                         }
                         append(" $timeExtension")
                     },
@@ -201,7 +204,8 @@ fun AlarmListItem(
             ) {
                 Text(text = "Schedule", style = MaterialTheme.typography.bodySmall)
                 Row(
-                    modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     alarm.days.forEachIndexed { index, c ->
                         DayChip(label = when (index) {

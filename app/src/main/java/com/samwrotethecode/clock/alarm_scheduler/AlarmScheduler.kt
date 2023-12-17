@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.alarm_schedular
+package com.samwrotethecode.clock.alarm_scheduler
 
 import android.annotation.SuppressLint
 import android.app.AlarmManager
