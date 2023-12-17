@@ -29,6 +29,7 @@ fun DaysOfWeekText(
         alarm.hour < currentTimeSnapshot.hour &&
         alarm.minute < currentTimeSnapshot.minute
     ) daysText = "Tomorrow"
+    else if (alarm.days == "0000000" && alarm.hour == 0) daysText = "Tomorrow"
     else if (alarm.days == "0000000") daysText = "Today"
     else {
         alarm.days.forEachIndexed { index, c ->
