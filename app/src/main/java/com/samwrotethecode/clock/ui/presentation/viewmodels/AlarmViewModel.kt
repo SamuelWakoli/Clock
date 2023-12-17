@@ -2,6 +2,7 @@ package com.samwrotethecode.clock.ui.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.samwrotethecode.clock.alarm_scheduler.AlarmScheduler
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.data.AlarmRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,11 @@ data class AlarmScreenUiState(
     val currentAlarm: AlarmDatabaseItem? = null,
 )
 
-class AlarmViewModel(val alarmRepository: AlarmRepository) : ViewModel() {
+class AlarmViewModel(
+    val alarmRepository: AlarmRepository,
+    val alarmScheduler: AlarmScheduler,
+) :
+    ViewModel() {
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
@@ -39,17 +44,24 @@ class AlarmViewModel(val alarmRepository: AlarmRepository) : ViewModel() {
     suspend fun addAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.insertAlarm(alarm)
         // TODO: Schedule alarm here
+        alarmScheduler.scheduleAlarm(alarm)
     }
 
     suspend fun updateAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.updateAlarm(alarm)
         // TODO: un-schedule and reschedule alarm
-        // TODO: Implement vibration toggle
+        if (alarm.isActive) {
+            alarmScheduler.cancelAlarm(alarm)
+            alarmScheduler.scheduleAlarm(alarm)
+        } else {
+            alarmScheduler.cancelAlarm(alarm)
+        }
     }
 
     suspend fun deleteAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.deleteAlarm(alarm)
         // TODO: un-schedule alarm
+        alarmScheduler.cancelAlarm(alarm)
     }
 
     fun setCurrentAlarm(alarm: AlarmDatabaseItem?) = _uiState.update {

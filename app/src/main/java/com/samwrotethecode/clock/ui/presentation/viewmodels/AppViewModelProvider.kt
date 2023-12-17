@@ -9,7 +9,10 @@ import com.samwrotethecode.clock.ui.AlarmApp
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
-            AlarmViewModel(alarmRepository = alarmApp().container.alarmRepository)
+            AlarmViewModel(
+                alarmRepository = alarmApp().container.alarmRepository,
+                alarmScheduler = alarmApp().container.alarmScheduler,
+            )
         }
 
         //Add other initializers here

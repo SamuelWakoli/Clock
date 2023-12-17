@@ -11,7 +11,7 @@ import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import java.time.ZonedDateTime
 
 interface AlarmScheduler {
-    fun scheduleAlarm(alarmItem: AlarmDatabaseItem, alarmId: Int)
+    fun scheduleAlarm(alarmItem: AlarmDatabaseItem)
     fun cancelAlarm(alarmItem: AlarmDatabaseItem)
 }
 
@@ -35,9 +35,10 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
 
     @SuppressLint("MissingPermission")
-    override fun scheduleAlarm(alarmItem: AlarmDatabaseItem, alarmId: Int) {
+    override fun scheduleAlarm(alarmItem: AlarmDatabaseItem) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("ALARM_LABEL", alarmItem.label)
+            putExtra("ALARM_ID", alarmItem.id)
         }
 
         val currentTime = ZonedDateTime.now()
@@ -48,13 +49,15 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
         if (alarmData.isActive) {
             alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                ZonedDateTime.now().toEpochSecond() * 1000 +
+                /* type = */ AlarmManager.RTC_WAKEUP,
+                /* triggerAtMillis = */
+                ZonedDateTime.now().toEpochSecond() * 1000 + // this is the current time
+                        ((alarmData.hour * 60 * 60 + alarmData.minute * 60) * 1000).toLong(), // + the set time
 
-                        ((alarmData.hour * 60 * 60 + alarmData.minute * 60) * 1000).toLong(),
+                /* operation = */
                 PendingIntent.getBroadcast(
                     context,
-                    alarmId,
+                    alarmItem.id,
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
@@ -68,7 +71,7 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
             Log.d(
                 "ALARM SCHEDULER",
-                "Alarm id: $alarmId Scheduled in ${alarmData.hour} hours, ${alarmData.minute} minutes"
+                "Alarm id: ${alarmItem.id}, Scheduled in ${alarmData.hour} hours, ${alarmData.minute} minutes"
             )
         }
     }
@@ -85,7 +88,7 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
         Log.d(
             "ALARM SCHEDULER",
-            "Alarm id: ${alarmItem.id} Scheduled in ${alarmItem.hour} hours, ${alarmItem.minute} minutes"
+            "Alarm id: ${alarmItem.id} CANCELLED"
         )
     }
 }
