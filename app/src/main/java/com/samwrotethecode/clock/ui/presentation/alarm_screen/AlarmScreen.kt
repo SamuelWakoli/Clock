@@ -76,7 +76,11 @@ fun AlarmScreen(
                 onClickUseKeyboard = {
                     useKeyboard = !useKeyboard
                     if (useKeyboard) {
-                        Toast.makeText(context, "Keyboard will be used when adding alarms", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            context,
+                            "Keyboard will be used when adding alarms",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             )
@@ -88,6 +92,8 @@ fun AlarmScreen(
         }
     ) { paddingValues: PaddingValues ->
         Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -124,8 +130,10 @@ fun AlarmScreen(
                     Spacer(modifier = Modifier.size(16.dp))
                 }
             } else {
-                LazyColumn (
+                LazyColumn(
+                    verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     items(alarmsList) { alarm: AlarmDatabaseItem ->
                         AlarmListItem(
