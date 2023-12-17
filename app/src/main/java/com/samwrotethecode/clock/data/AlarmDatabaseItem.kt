@@ -12,4 +12,6 @@ data class AlarmDatabaseItem(
     val label: String?,
     val isActive: Boolean,
     val days: String,
+    val tone: String? = null,
+    val vibrate: Boolean = false,
 )

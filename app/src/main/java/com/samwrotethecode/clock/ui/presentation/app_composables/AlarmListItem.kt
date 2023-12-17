@@ -244,21 +244,26 @@ fun AlarmListItem(
                 },
             )
 
-            // TODO: Implement vibration toggle
-            ListItem(colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent,
-            ), leadingContent = {
-                Icon(
-                    imageVector = Icons.Outlined.Vibration,
-                    contentDescription = null,
-                )
-            }, headlineContent = {
-                Text(text = "Vibrate")
-            }, trailingContent = {
-                CircularCheckbox(checked = true) {
-                    // TODO: Implement vibration toggle
-                }
-            })
+            ListItem(
+                modifier = Modifier.clickable {
+                    coroutineScope.launch {
+                        viewModel.updateAlarm(alarm.copy(vibrate = !alarm.vibrate))
+                    }
+                },
+                colors = ListItemDefaults.colors(
+                    containerColor = Color.Transparent,
+                ), leadingContent = {
+                    Icon(
+                        imageVector = Icons.Outlined.Vibration,
+                        contentDescription = null,
+                    )
+                }, headlineContent = {
+                    Text(text = "Vibrate")
+                }, trailingContent = {
+                    CircularCheckbox(checked = alarm.vibrate) {
+
+                    }
+                })
             ListItem(
                 modifier = Modifier.clickable {
                     coroutineScope.launch {

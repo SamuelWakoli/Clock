@@ -44,6 +44,7 @@ class AlarmViewModel(val alarmRepository: AlarmRepository) : ViewModel() {
     suspend fun updateAlarm(alarm: AlarmDatabaseItem) {
         alarmRepository.updateAlarm(alarm)
         // TODO: un-schedule and reschedule alarm
+        // TODO: Implement vibration toggle
     }
 
     suspend fun deleteAlarm(alarm: AlarmDatabaseItem) {
