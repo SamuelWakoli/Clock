@@ -30,11 +30,11 @@ class AlarmViewModel(
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
-    val alarmsUiState: StateFlow<AlarmsUiState> =
+    val alarmsUiState: StateFlow<AlarmsUiState?> =
         alarmRepository.getAllAlarms().map { AlarmsUiState(it) }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-            initialValue = AlarmsUiState(alarms = listOf())
+            initialValue = null
         )
 
     private var _uiState = MutableStateFlow(AlarmScreenUiState())

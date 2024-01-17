@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AlarmOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,7 +52,7 @@ fun AlarmScreen(
     viewModel: AlarmViewModel,
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val alarmsList = viewModel.alarmsUiState.collectAsState().value.alarms
+    val alarmsList = viewModel.alarmsUiState.collectAsState().value?.alarms
     val context = LocalContext.current
     var is24HourFormat by rememberSaveable {
         mutableStateOf(DateFormat.is24HourFormat(context))
@@ -99,7 +100,15 @@ fun AlarmScreen(
                 .padding(paddingValues)
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
         ) {
-            if (alarmsList.isEmpty()) {
+            if (alarmsList == null) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (alarmsList.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
