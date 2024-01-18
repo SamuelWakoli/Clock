@@ -1,6 +1,6 @@
 ###
 
-<img height="80" src="C:\Users\Samuel Wakoli\AndroidStudioProjects\Clock\app\src\main\res\mipmap-xxxhdpi\ic_launcher_round.webp" title="App logo" width="80"/>
+<img height="80" src="app\src\main\res\mipmap-xxxhdpi\ic_launcher_round.webp" title="App logo" width="80"/>
 
 # Clock: Alarm UI
 
@@ -9,4 +9,4 @@ clock. Future improvements may guarantee full functionality of the app. _[Test i
 
 _This app may show logical errors when trying to excecute alarms._
 
-<img src="C:\Users\Samuel Wakoli\AndroidStudioProjects\Clock\screenshots\home.png" width="250" height="520"/>  <img src="C:\Users\Samuel Wakoli\AndroidStudioProjects\Clock\screenshots\alarm_detail.png" width="250" height="520"/>  <img src="C:\Users\Samuel Wakoli\AndroidStudioProjects\Clock\screenshots\add_alarm.png" width="250" height="520"/>
+<img src="screenshots\home.png" title="Home screen" width="250" height="520"/>  <img src="screenshots\alarm_detail.png" title="Alarm detail" width="250" height="520"/>  <img src="screenshots\add_alarm.png" title="Add alarm dialog" width="250" height="520"/>
