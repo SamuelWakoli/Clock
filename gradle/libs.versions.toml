@@ -1,17 +1,17 @@
 [versions]
-agp = "8.2.1"
-kotlin = "1.9.20"
-core-ktx = "1.12.0"
+agp = "8.11.0"
+kotlin = "2.2.0"
+core-ktx = "1.16.0"
 junit = "4.13.2"
-androidx-test-ext-junit = "1.1.5"
-espresso-core = "3.5.1"
-lifecycle-runtime-ktx = "2.6.2"
-activity-compose = "1.8.1"
-compose-bom = "2023.10.01"
-lifecycle-viewmodel-compose = "2.6.2"
-material-icons-extended-android = "1.5.4"
-navigation-compose = "2.7.5"
-room-runtime = "2.6.0"
+androidx-test-ext-junit = "1.2.1"
+espresso-core = "3.6.1"
+lifecycle-runtime-ktx = "2.9.1"
+activity-compose = "1.10.1"
+compose-bom = "2025.06.01"
+lifecycle-viewmodel-compose = "2.9.1"
+material-icons-extended-android = "1.7.8"
+navigation-compose = "2.9.1"
+room-runtime = "2.7.2"
 
 [libraries]
 androidx-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "material-icons-extended-android" }
@@ -36,5 +36,6 @@ ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 material3 = { group = "androidx.compose.material3", name = "material3" }
 
 [plugins]
-androidApplication = { id = "com.android.application", version.ref = "agp" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

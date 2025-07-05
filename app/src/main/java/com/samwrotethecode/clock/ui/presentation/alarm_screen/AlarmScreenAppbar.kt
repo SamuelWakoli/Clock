@@ -10,7 +10,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltipBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,33 +40,31 @@ fun AlarmScreenAppbar(
     TopAppBar(
         title = { Text(text = "Alarm", color = MaterialTheme.colorScheme.primary) },
         actions = {
-            PlainTooltipBox(tooltip = { Text(text = "More") }) {
-                IconButton(onClick = { showDropMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    DropdownMenu(
-                        expanded = showDropMenu,
-                        onDismissRequest = { showDropMenu = false }) {
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                CircularCheckbox(checked = is24HourFormat) {}
-                            },
-                            text = { Text(text = "24-hour") }, onClick = {
-                                showDropMenu = false
-                                onClickUpdate24Hour()
-                            })
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                CircularCheckbox(checked = useKeyboard) {}
-                            },
-                            text = { Text(text = "Use keyboard") }, onClick = {
-                                showDropMenu = false
-                                onClickUseKeyboard()
-                            })
-                    }
+            IconButton(onClick = { showDropMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                DropdownMenu(
+                    expanded = showDropMenu,
+                    onDismissRequest = { showDropMenu = false }) {
+                    DropdownMenuItem(
+                        leadingIcon = {
+                            CircularCheckbox(checked = is24HourFormat) {}
+                        },
+                        text = { Text(text = "24-hour") }, onClick = {
+                            showDropMenu = false
+                            onClickUpdate24Hour()
+                        })
+                    DropdownMenuItem(
+                        leadingIcon = {
+                            CircularCheckbox(checked = useKeyboard) {}
+                        },
+                        text = { Text(text = "Use keyboard") }, onClick = {
+                            showDropMenu = false
+                            onClickUseKeyboard()
+                        })
                 }
             }
         },

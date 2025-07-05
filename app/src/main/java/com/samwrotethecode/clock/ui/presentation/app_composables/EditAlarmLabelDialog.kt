@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -80,7 +80,7 @@ fun EditAlarmLabelDialog(
                     label = { Text(text = "Label") },
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Outlined.Label,
+                            imageVector = Icons.AutoMirrored.Outlined.Label,
                             contentDescription = null,
                             tint = if (isError) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary,
@@ -104,9 +104,9 @@ fun EditAlarmLabelDialog(
                     isError = isError,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
-                        autoCorrect = true,
+                        autoCorrectEnabled = true,
                         keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
+                        imeAction = ImeAction.Done
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
