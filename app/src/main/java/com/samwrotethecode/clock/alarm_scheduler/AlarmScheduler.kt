@@ -38,21 +38,28 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
     override fun scheduleAlarm(alarmItem: AlarmDatabaseItem) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("ALARM_LABEL", alarmItem.label)
-            putExtra("ALARM_ID", alarmItem.id)
+            putExtra("ALARM_ID", alarmItem.id) // alarmItem.id is already an Int
         }
 
         val currentTime = ZonedDateTime.now()
+        // BUG: The logic for calculating relative alarmData hour/minute is likely flawed
+        // and will not work correctly for scheduling across day boundaries or for specific dates.
+        // It should calculate the next occurrence of alarmItem.hour and alarmItem.minute.
         val alarmData = alarmItem.copy(
-            hour = alarmItem.hour - currentTime.hour,
-            minute = alarmItem.minute - currentTime.minute,
+            hour = alarmItem.hour - currentTime.hour, // This relative calculation is problematic
+            minute = alarmItem.minute - currentTime.minute, // This relative calculation is problematic
         )
 
-        if (alarmData.isActive) {
+        // The triggerAtMillis calculation also seems to be based on this relative time,
+        // which needs to be corrected to an absolute future timestamp.
+        // It should use Calendar or java.time to set a specific time for the alarm.
+
+        if (alarmItem.isActive) { // Use alarmItem.isActive directly
             alarmManager.setExactAndAllowWhileIdle(
                 /* type = */ AlarmManager.RTC_WAKEUP,
                 /* triggerAtMillis = */
-                ZonedDateTime.now().toEpochSecond() * 1000 + // this is the current time
-                        ((alarmData.hour * 60 * 60 + alarmData.minute * 60) * 1000).toLong(), // + the set time
+                ZonedDateTime.now().toEpochSecond() * 1000 +
+                        ((alarmData.hour * 60 * 60 + alarmData.minute * 60) * 1000).toLong(), // Problematic time calculation
 
                 /* operation = */
                 PendingIntent.getBroadcast(
@@ -65,6 +72,7 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
             Toast.makeText(
                 context,
+                // Displaying relative time here can be misleading if the scheduling logic is fixed
                 "Alarm Scheduled in ${alarmData.hour} hours, ${alarmData.minute} minutes",
                 Toast.LENGTH_LONG
             ).show()
