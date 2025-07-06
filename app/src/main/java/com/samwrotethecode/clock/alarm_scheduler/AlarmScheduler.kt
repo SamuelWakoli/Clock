@@ -1,102 +1,143 @@
 package com.samwrotethecode.clock.alarm_scheduler
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 interface AlarmScheduler {
     fun scheduleAlarm(alarmItem: AlarmDatabaseItem)
     fun cancelAlarm(alarmItem: AlarmDatabaseItem)
 }
 
-/**
- * Scheduler for alarms.
- * @WARNING: This class contains bugs when scheduling alarms.
- *
- *
- * @param context The context of the application.
- * @author Sam
- *
- * @see AlarmReceiver
- * @see AlarmDatabaseItem
- * @constructor Creates an AlarmScheduler object.
- *
- */
-
 class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
+    private fun calculateNextTriggerTime(alarmItem: AlarmDatabaseItem): ZonedDateTime? {
+        val now = ZonedDateTime.now(ZoneId.systemDefault())
+        var alarmTime = LocalTime.of(alarmItem.hour, alarmItem.minute)
+        var alarmDateTime = LocalDateTime.of(now.toLocalDate(), alarmTime)
 
-    @SuppressLint("MissingPermission")
+        // If it's a repeating alarm
+        if (alarmItem.days.contains("1")) {
+            var scheduled = false
+            for (i in 0..6) { // Check next 7 days starting from today
+                val checkingDate = now.toLocalDate().plusDays(i.toLong())
+                val dayOfWeek = checkingDate.dayOfWeek // MONDAY (1) to SUNDAY (7)
+
+                // Check if this day is selected in alarmItem.days (0 is Monday, 6 is Sunday)
+                if (alarmItem.days[dayOfWeek.value - 1] == '1') {
+                    alarmDateTime = LocalDateTime.of(checkingDate, alarmTime)
+                    if (ZonedDateTime.of(alarmDateTime, ZoneId.systemDefault()).isAfter(now)) {
+                        scheduled = true
+                        break
+                    }
+                }
+            }
+            // If all selected days in the current week + today have passed, find the next occurrence in the following week
+            if (!scheduled) {
+                for (i in 0..6) {
+                    val checkingDate = now.toLocalDate().plusDays(7 + i.toLong()) // Start from next week
+                    val dayOfWeek = checkingDate.dayOfWeek
+                    if (alarmItem.days[dayOfWeek.value - 1] == '1') {
+                        alarmDateTime = LocalDateTime.of(checkingDate, alarmTime)
+                        break // Found the first available day next week
+                    }
+                }
+            }
+
+        } else { // One-time alarm
+            if (ZonedDateTime.of(alarmDateTime, ZoneId.systemDefault()).isBefore(now) ||
+                ZonedDateTime.of(alarmDateTime, ZoneId.systemDefault()).isEqual(now)
+            ) {
+                alarmDateTime = alarmDateTime.plusDays(1) // Schedule for tomorrow
+            }
+        }
+        return ZonedDateTime.of(alarmDateTime, ZoneId.systemDefault())
+    }
+
     override fun scheduleAlarm(alarmItem: AlarmDatabaseItem) {
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("ALARM_LABEL", alarmItem.label)
-            putExtra("ALARM_ID", alarmItem.id) // alarmItem.id is already an Int
+        if (!alarmItem.isActive) {
+            Log.d("AppAlarmScheduler", "Alarm ${alarmItem.id} is not active. Not scheduling.")
+            return
         }
 
-        val currentTime = ZonedDateTime.now()
-        // BUG: The logic for calculating relative alarmData hour/minute is likely flawed
-        // and will not work correctly for scheduling across day boundaries or for specific dates.
-        // It should calculate the next occurrence of alarmItem.hour and alarmItem.minute.
-        val alarmData = alarmItem.copy(
-            hour = alarmItem.hour - currentTime.hour, // This relative calculation is problematic
-            minute = alarmItem.minute - currentTime.minute, // This relative calculation is problematic
+        // Permission Check for Android S+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Log.w("AppAlarmScheduler", "Missing SCHEDULE_EXACT_ALARM permission.")
+                Toast.makeText(context, "Permission needed to schedule alarms. Please grant it in app settings.", Toast.LENGTH_LONG).show()
+                // Optionally, direct user to settings: Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                return
+            }
+        }
+
+        val triggerTime = calculateNextTriggerTime(alarmItem)
+
+        if (triggerTime == null) {
+            Log.e("AppAlarmScheduler", "Could not calculate next trigger time for alarm ${alarmItem.id}")
+            return
+        }
+
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_TRIGGER_ALARM // Use the new action
+            putExtra("ALARM_ID", alarmItem.id)
+            putExtra("ALARM_LABEL", alarmItem.label)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            alarmItem.id, // Use alarm ID as request code for uniqueness
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // The triggerAtMillis calculation also seems to be based on this relative time,
-        // which needs to be corrected to an absolute future timestamp.
-        // It should use Calendar or java.time to set a specific time for the alarm.
-
-        if (alarmItem.isActive) { // Use alarmItem.isActive directly
+        try {
             alarmManager.setExactAndAllowWhileIdle(
-                /* type = */ AlarmManager.RTC_WAKEUP,
-                /* triggerAtMillis = */
-                ZonedDateTime.now().toEpochSecond() * 1000 +
-                        ((alarmData.hour * 60 * 60 + alarmData.minute * 60) * 1000).toLong(), // Problematic time calculation
-
-                /* operation = */
-                PendingIntent.getBroadcast(
-                    context,
-                    alarmItem.id,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                AlarmManager.RTC_WAKEUP,
+                triggerTime.toInstant().toEpochMilli(),
+                pendingIntent
             )
-
+            val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
             Toast.makeText(
                 context,
-                // Displaying relative time here can be misleading if the scheduling logic is fixed
-                "Alarm Scheduled in ${alarmData.hour} hours, ${alarmData.minute} minutes",
+                "Alarm '${alarmItem.label ?: ""}' scheduled for ${triggerTime.format(formatter)}",
                 Toast.LENGTH_LONG
             ).show()
-
             Log.d(
-                "ALARM SCHEDULER",
-                "Alarm id: ${alarmItem.id}, Scheduled in ${alarmData.hour} hours, ${alarmData.minute} minutes"
+                "AppAlarmScheduler",
+                "Alarm id: ${alarmItem.id} scheduled for ${triggerTime.format(formatter)}"
             )
+        } catch (se: SecurityException) {
+            Log.e("AppAlarmScheduler", "SecurityException while scheduling alarm. Check WAKE_LOCK permission?", se)
+            Toast.makeText(context, "Could not schedule alarm due to security restrictions.", Toast.LENGTH_LONG).show()
         }
     }
 
     override fun cancelAlarm(alarmItem: AlarmDatabaseItem) {
-        alarmManager.cancel(
-            PendingIntent.getBroadcast(
-                context,
-                alarmItem.id,
-                Intent(context, AlarmReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_TRIGGER_ALARM // Action must match for cancellation
+             putExtra("ALARM_ID", alarmItem.id) // Ensure ID is present for cancellation to work if PI matching needs it
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            alarmItem.id, // Request code must match
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        Log.d(
-            "ALARM SCHEDULER",
-            "Alarm id: ${alarmItem.id} CANCELLED"
-        )
+        alarmManager.cancel(pendingIntent)
+        Log.d("AppAlarmScheduler", "Cancelled alarm id: ${alarmItem.id}")
+        Toast.makeText(context, "Alarm '${alarmItem.label ?: ""}' cancelled", Toast.LENGTH_SHORT).show()
     }
 }

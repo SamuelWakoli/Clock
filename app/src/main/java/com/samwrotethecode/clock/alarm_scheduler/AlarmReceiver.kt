@@ -3,123 +3,49 @@ package com.samwrotethecode.clock.alarm_scheduler
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
+import android.os.Build
 import android.util.Log
-import androidx.core.net.toUri
-import com.samwrotethecode.clock.data.AlarmDatabase
-import com.samwrotethecode.clock.data.AlarmDatabaseItem
-import com.samwrotethecode.clock.data.AlarmOfflineRepository
-import com.samwrotethecode.clock.data.AlarmRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
 
-    private lateinit var alarmRepository: AlarmRepository
-    private lateinit var alarmScheduler: AlarmScheduler // Added for rescheduling
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
-
     companion object {
-        private var currentRingtone: Ringtone? = null
+        const val ACTION_DISMISS_ALARM = "com.samwrotethecode.clock.ACTION_DISMISS_ALARM"
+        const val ACTION_TRIGGER_ALARM = "com.samwrotethecode.clock.ACTION_TRIGGER_ALARM"
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (context == null) return
-
-        alarmRepository =
-            AlarmOfflineRepository(AlarmDatabase.getDatabase(context = context).alarmDao())
-        alarmScheduler = AppAlarmScheduler(context) // Initialize scheduler
-
-        val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: -1
-        val alarmLabel = intent?.getStringExtra("ALARM_LABEL") ?: "Alarm"
-
-        if (alarmId == -1) {
-            Log.e("ALARM SCHEDULER", "Alarm ID missing or invalid in intent")
+        if (context == null || intent == null) {
+            Log.e("AlarmReceiver", "Context or Intent is null")
             return
         }
 
-        Log.d("ALARM SCHEDULER", "RECEIVER CALLED for ID: $alarmId, Label: $alarmLabel")
+        val alarmId = intent.getIntExtra("ALARM_ID", -1)
+        if (alarmId == -1 && intent.action != AlarmService.ACTION_SNOOZE_ALARM) { // Snooze might not have an ID initially if it's a generic snooze
+            Log.e("AlarmReceiver", "Alarm ID missing or invalid in intent action: ${intent.action}")
+            return
+        }
 
-        scope.launch {
-            val alarmItem: AlarmDatabaseItem? = alarmRepository.getAlarm(alarmId).firstOrNull()
-
-            if (alarmItem == null) {
-                Log.e("ALARM SCHEDULER", "Alarm item with ID $alarmId not found in database.")
-                return@launch
+        val serviceIntent = Intent(context, AlarmService::class.java).apply {
+            putExtra("ALARM_ID", alarmId)
+            // Pass the original intent action to the service, or define a new one for clarity
+            // For example, AlarmService could have its own set of actions like START, DISMISS, SNOOZE
+            this.action = intent.action // Forward the action (e.g., TRIGGER_ALARM, DISMISS_ALARM)
+            // If the original intent has a label, forward it too.
+            if (intent.hasExtra("ALARM_LABEL")) {
+                putExtra("ALARM_LABEL", intent.getStringExtra("ALARM_LABEL"))
             }
+        }
 
-            Log.d("ALARM SCHEDULER", "Retrieved alarm item: $alarmItem")
+        Log.d("AlarmReceiver", "Received action: ${intent.action} for alarm ID: $alarmId. Starting service.")
 
-            // Play the sound only if the alarm is currently active
-            if (alarmItem.isActive) {
-                currentRingtone?.stop()
-
-                val toneUriString = alarmItem.toneUri
-                val ringtoneUri: Uri? = if (toneUriString != null) {
-                    try {
-                        toneUriString.toUri()
-                    } catch (e: Exception) {
-                        Log.e("ALARM SCHEDULER", "Failed to parse tone URI: $toneUriString", e)
-                        null
-                    }
-                } else {
-                    null
-                }
-
-                currentRingtone = if (ringtoneUri != null) {
-                    RingtoneManager.getRingtone(context, ringtoneUri)
-                } else {
-                    val defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    if (defaultAlarmUri != null) {
-                        RingtoneManager.getRingtone(context, defaultAlarmUri)
-                    } else {
-                        val defaultNotificationUri =
-                            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                        RingtoneManager.getRingtone(context, defaultNotificationUri)
-                    }
-                }
-
-                if (currentRingtone == null) {
-                    Log.e("ALARM SCHEDULER", "Failed to get any ringtone.")
-                } else {
-                    try {
-                        currentRingtone?.play()
-                        Log.d(
-                            "ALARM SCHEDULER",
-                            "Playing ringtone: ${currentRingtone?.getTitle(context)}"
-                        )
-                    } catch (e: Exception) {
-                        Log.e("ALARM SCHEDULER", "Error playing ringtone", e)
-                    }
-                }
-
-                // Rescheduling logic
-                val isRepeating = alarmItem.days.contains("1")
-                if (isRepeating) {
-                    // It's a repeating alarm and it's active, so reschedule it for the next occurrence.
-                    alarmScheduler.scheduleAlarm(alarmItem)
-                    Log.d("ALARM SCHEDULER", "Rescheduled repeating alarm ID: ${alarmItem.id}")
-                } else {
-                    // It's a one-time alarm, so mark it as inactive.
-                    val updatedAlarmItem = alarmItem.copy(isActive = false)
-                    alarmRepository.updateAlarm(updatedAlarmItem)
-                    Log.d(
-                        "ALARM SCHEDULER",
-                        "Marked one-time alarm ID: ${alarmItem.id} as inactive."
-                    )
-                }
-            } else {
-                Log.d(
-                    "ALARM SCHEDULER",
-                    "Alarm ID: ${alarmItem.id} is inactive. Not playing or rescheduling."
-                )
-            }
+        // For triggering an alarm, it must be a foreground service.
+        // For dismissing, a regular startService is fine, but for consistency and potential future
+        // operations during dismiss, startForegroundService can also be used if the service
+        // calls startForeground() quickly.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
         }
     }
 }
