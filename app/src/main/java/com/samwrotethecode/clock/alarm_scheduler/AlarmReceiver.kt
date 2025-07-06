@@ -13,9 +13,10 @@ class AlarmReceiver : BroadcastReceiver() {
     private lateinit var alarmRepository: AlarmRepository
     override fun onReceive(context: Context?, intent: Intent?) {
 
-        if (context != null)
-        alarmRepository  = AlarmOfflineRepository(AlarmDatabase.getDatabase(context = context).alarmDao())
-
+        if (context != null) {
+            alarmRepository =
+                AlarmOfflineRepository(AlarmDatabase.getDatabase(context = context).alarmDao())
+        }
 
         // TODO: Check if it repeats, vibration
         /// if it repeats, reschedule
