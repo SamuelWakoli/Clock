@@ -7,6 +7,7 @@ import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import com.samwrotethecode.clock.data.AlarmDatabase
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.data.AlarmOfflineRepository
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
 
     private lateinit var alarmRepository: AlarmRepository
+    private lateinit var alarmScheduler: AlarmScheduler // Added for rescheduling
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
 
@@ -30,7 +32,9 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null) return
 
-        alarmRepository = AlarmOfflineRepository(AlarmDatabase.getDatabase(context = context).alarmDao())
+        alarmRepository =
+            AlarmOfflineRepository(AlarmDatabase.getDatabase(context = context).alarmDao())
+        alarmScheduler = AppAlarmScheduler(context) // Initialize scheduler
 
         val alarmId = intent?.getIntExtra("ALARM_ID", -1) ?: -1
         val alarmLabel = intent?.getStringExtra("ALARM_LABEL") ?: "Alarm"
@@ -52,41 +56,69 @@ class AlarmReceiver : BroadcastReceiver() {
 
             Log.d("ALARM SCHEDULER", "Retrieved alarm item: $alarmItem")
 
-            currentRingtone?.stop()
+            // Play the sound only if the alarm is currently active
+            if (alarmItem.isActive) {
+                currentRingtone?.stop()
 
-            val toneUriString = alarmItem.toneUri
-            val ringtoneUri: Uri? = if (toneUriString != null) {
-                try {
-                    Uri.parse(toneUriString)
-                } catch (e: Exception) {
-                    Log.e("ALARM SCHEDULER", "Failed to parse tone URI: $toneUriString", e)
+                val toneUriString = alarmItem.toneUri
+                val ringtoneUri: Uri? = if (toneUriString != null) {
+                    try {
+                        toneUriString.toUri()
+                    } catch (e: Exception) {
+                        Log.e("ALARM SCHEDULER", "Failed to parse tone URI: $toneUriString", e)
+                        null
+                    }
+                } else {
                     null
                 }
-            } else {
-                null
-            }
 
-            currentRingtone = if (ringtoneUri != null) {
-                RingtoneManager.getRingtone(context, ringtoneUri)
-            } else {
-                val defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                if (defaultAlarmUri != null) {
-                    RingtoneManager.getRingtone(context, defaultAlarmUri)
+                currentRingtone = if (ringtoneUri != null) {
+                    RingtoneManager.getRingtone(context, ringtoneUri)
                 } else {
-                    val defaultNotificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                    RingtoneManager.getRingtone(context, defaultNotificationUri)
+                    val defaultAlarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    if (defaultAlarmUri != null) {
+                        RingtoneManager.getRingtone(context, defaultAlarmUri)
+                    } else {
+                        val defaultNotificationUri =
+                            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                        RingtoneManager.getRingtone(context, defaultNotificationUri)
+                    }
                 }
-            }
 
-            if (currentRingtone == null) {
-                Log.e("ALARM SCHEDULER", "Failed to get any ringtone.")
-            } else {
-                try {
-                    currentRingtone?.play()
-                    Log.d("ALARM SCHEDULER", "Playing ringtone: ${currentRingtone?.getTitle(context)}")
-                } catch (e: Exception) {
-                    Log.e("ALARM SCHEDULER", "Error playing ringtone", e)
+                if (currentRingtone == null) {
+                    Log.e("ALARM SCHEDULER", "Failed to get any ringtone.")
+                } else {
+                    try {
+                        currentRingtone?.play()
+                        Log.d(
+                            "ALARM SCHEDULER",
+                            "Playing ringtone: ${currentRingtone?.getTitle(context)}"
+                        )
+                    } catch (e: Exception) {
+                        Log.e("ALARM SCHEDULER", "Error playing ringtone", e)
+                    }
                 }
+
+                // Rescheduling logic
+                val isRepeating = alarmItem.days.contains("1")
+                if (isRepeating) {
+                    // It's a repeating alarm and it's active, so reschedule it for the next occurrence.
+                    alarmScheduler.scheduleAlarm(alarmItem)
+                    Log.d("ALARM SCHEDULER", "Rescheduled repeating alarm ID: ${alarmItem.id}")
+                } else {
+                    // It's a one-time alarm, so mark it as inactive.
+                    val updatedAlarmItem = alarmItem.copy(isActive = false)
+                    alarmRepository.updateAlarm(updatedAlarmItem)
+                    Log.d(
+                        "ALARM SCHEDULER",
+                        "Marked one-time alarm ID: ${alarmItem.id} as inactive."
+                    )
+                }
+            } else {
+                Log.d(
+                    "ALARM SCHEDULER",
+                    "Alarm ID: ${alarmItem.id} is inactive. Not playing or rescheduling."
+                )
             }
         }
     }
