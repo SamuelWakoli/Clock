@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.presentation.app_composables
+package com.samwrotethecode.clock.ui.presentation.composables
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

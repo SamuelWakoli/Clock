@@ -41,7 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
-import com.samwrotethecode.clock.ui.presentation.app_composables.AlarmListItem
+import com.samwrotethecode.clock.ui.presentation.composables.AlarmListItem
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AppViewModelProvider
 

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,7 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.samwrotethecode.clock.ui.presentation.app_composables.CircularCheckbox
+import com.samwrotethecode.clock.ui.presentation.composables.AppInfoDialog
+import com.samwrotethecode.clock.ui.presentation.composables.CircularCheckbox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,17 +35,23 @@ fun AlarmScreenAppbar(
     useKeyboard: Boolean,
     onClickUseKeyboard: () -> Unit,
 ) {
-    var showDropMenu by remember {
-        mutableStateOf(false)
-    }
+    var showDropMenu by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = { Text(text = "Alarm", color = MaterialTheme.colorScheme.primary) },
         actions = {
+            IconButton(onClick = { showInfoDialog = true }) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "Info",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
             IconButton(onClick = { showDropMenu = true }) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
-                    contentDescription = null,
+                    contentDescription = "More",
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 DropdownMenu(
@@ -70,6 +78,9 @@ fun AlarmScreenAppbar(
         },
         scrollBehavior = scrollBehavior,
     )
+
+
+    if (showInfoDialog) AppInfoDialog(onDismissRequest = { showInfoDialog = false })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

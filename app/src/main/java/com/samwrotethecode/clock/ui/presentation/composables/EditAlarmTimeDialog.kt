@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.presentation.app_composables
+package com.samwrotethecode.clock.ui.presentation.composables
 
 import android.text.format.DateFormat
 import android.widget.Toast

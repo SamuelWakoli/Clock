@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.presentation.app_composables
+package com.samwrotethecode.clock.ui.presentation.composables
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box

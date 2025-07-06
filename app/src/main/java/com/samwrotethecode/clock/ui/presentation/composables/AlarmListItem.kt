@@ -1,4 +1,4 @@
-package com.samwrotethecode.clock.ui.presentation.app_composables
+package com.samwrotethecode.clock.ui.presentation.composables
 
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Vibration
