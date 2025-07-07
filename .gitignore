@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+/clock.jks
+/clock.pem
