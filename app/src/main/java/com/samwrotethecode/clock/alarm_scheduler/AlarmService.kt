@@ -12,11 +12,11 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.samwrotethecode.clock.R
 import com.samwrotethecode.clock.data.AlarmDatabase
-import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.data.AlarmOfflineRepository
 import com.samwrotethecode.clock.data.AlarmRepository
 import kotlinx.coroutines.CoroutineScope
@@ -201,7 +201,8 @@ class AlarmService : Service() {
                 )
                 val alarmManager =
                     getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                // Build.VERSION.SDK_INT >= Build.VERSION_CODES.S is redundant as minSdk is 31
+                if (!alarmManager.canScheduleExactAlarms()) {
                     Log.w(TAG, "Cannot schedule exact snooze alarm, permission missing.")
                     Toast.makeText(applicationContext, "Cannot schedule snooze. Exact alarm permission missing.", Toast.LENGTH_LONG).show()
                 } else {
@@ -240,9 +241,8 @@ class AlarmService : Service() {
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    it.isLooping = true
-                }
+                // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q is redundant as minSdk is 31 (Q is 29)
+                it.isLooping = true
                 it.play()
                 Log.d(TAG, "Ringtone started for alarmId: $currentAlarmId")
             }
@@ -299,19 +299,18 @@ class AlarmService : Service() {
 
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Alarm Clock Channel"
-            val descriptionText = "Channel for alarm clock notifications"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-                setSound(null, null) 
-                enableVibration(true) 
-            }
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        // Build.VERSION.SDK_INT >= Build.VERSION_CODES.O is redundant as minSdk is 31 (O is 26)
+        val name = "Alarm Clock Channel"
+        val descriptionText = "Channel for alarm clock notifications"
+        val importance = NotificationManager.IMPORTANCE_HIGH
+        val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+            description = descriptionText
+            setSound(null, null) 
+            enableVibration(true) 
         }
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     override fun onBind(intent: Intent?): IBinder? {

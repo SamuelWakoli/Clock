@@ -73,14 +73,12 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
             return
         }
 
-        // Permission Check for Android S+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Log.w("AppAlarmScheduler", "Missing SCHEDULE_EXACT_ALARM permission.")
-                Toast.makeText(context, "Permission needed to schedule alarms. Please grant it in app settings.", Toast.LENGTH_LONG).show()
-                // Optionally, direct user to settings: Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                return
-            }
+        // Permission Check for Android S+ is no longer needed as minSdk is 31
+        if (!alarmManager.canScheduleExactAlarms()) {
+            Log.w("AppAlarmScheduler", "Missing SCHEDULE_EXACT_ALARM permission.")
+            Toast.makeText(context, "Permission needed to schedule alarms. Please grant it in app settings.", Toast.LENGTH_LONG).show()
+            // Optionally, direct user to settings: Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            return
         }
 
         val triggerTime = calculateNextTriggerTime(alarmItem)
