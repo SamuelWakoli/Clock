@@ -1,5 +1,6 @@
 package com.samwrotethecode.clock.ui.presentation.composables
 
+import android.media.RingtoneManager
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOutSine
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
 import com.samwrotethecode.clock.ui.presentation.viewmodels.AlarmViewModel
@@ -183,7 +185,8 @@ fun AlarmListItem(
         }
 
 
-        ListItem(modifier = Modifier.height(48.dp), colors = ListItemDefaults.colors(
+        ListItem(
+            modifier = Modifier.height(48.dp), colors = ListItemDefaults.colors(
             containerColor = Color.Transparent,
         ), headlineContent = { DaysOfWeekText(alarm = alarm) }, trailingContent = {
             Switch(checked = isToggled, onCheckedChange = {
@@ -208,27 +211,28 @@ fun AlarmListItem(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     alarm.days.forEachIndexed { index, c ->
-                        DayChip(label = when (index) {
-                            0 -> "S"
-                            1 -> "M"
-                            2 -> "T"
-                            3 -> "W"
-                            4 -> "T"
-                            5 -> "F"
-                            6 -> "S"
-                            else -> ""
-                        }, dayIndex = index, selected = c == '1', onClick = {
-                            val newDays = alarm.days.toCharArray()
-                            newDays[index] = if (it) '1' else '0'
+                        DayChip(
+                            label = when (index) {
+                                0 -> "S"
+                                1 -> "M"
+                                2 -> "T"
+                                3 -> "W"
+                                4 -> "T"
+                                5 -> "F"
+                                6 -> "S"
+                                else -> ""
+                            }, dayIndex = index, selected = c == '1', onClick = {
+                                val newDays = alarm.days.toCharArray()
+                                newDays[index] = if (it) '1' else '0'
 
-                            coroutineScope.launch {
-                                viewModel.updateAlarm(
-                                    alarm.copy(
-                                        days = newDays.concatToString()
+                                coroutineScope.launch {
+                                    viewModel.updateAlarm(
+                                        alarm.copy(
+                                            days = newDays.concatToString()
+                                        )
                                     )
-                                )
-                            }
-                        })
+                                }
+                            })
                     }
                 }
             }
@@ -244,7 +248,10 @@ fun AlarmListItem(
                     )
                 },
                 headlineContent = {
-                    Text(text = "Default (Cesium)")
+                    val toneName = alarm.toneUri?.let {
+                        RingtoneManager.getRingtone(context, it.toUri())?.getTitle(context)
+                    } ?: "Default"
+                    Text(text = toneName)
                 },
             )
 
@@ -265,7 +272,9 @@ fun AlarmListItem(
                     Text(text = "Vibrate")
                 }, trailingContent = {
                     CircularCheckbox(checked = alarm.vibrate) {
-
+                        coroutineScope.launch {
+                            viewModel.updateAlarm(alarm.copy(vibrate = !alarm.vibrate))
+                        }
                     }
                 })
             ListItem(
@@ -320,9 +329,12 @@ fun AlarmListItem(
 
     if (showEditAlarmToneDialog) {
         EditAlarmToneDialog(
+            alarm = alarm,
+            viewModel = viewModel,
             onDismissRequest = {
                 showEditAlarmToneDialog = false
-            })
+            }
+        )
     }
 }
 
@@ -336,7 +348,8 @@ private fun AlarmListItemPreview() {
             minute = 30,
             label = "Practice Compose",
             isActive = true,
-            days = "0001000"
+            days = "0001000",
+            toneUri = "content://media/internal/audio/media/123"
         ),
         viewModel = viewModel(factory = AppViewModelProvider.Factory),
         is24HourFormat = false,
