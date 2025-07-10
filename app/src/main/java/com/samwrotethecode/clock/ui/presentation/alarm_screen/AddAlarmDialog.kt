@@ -146,7 +146,7 @@ fun AddAlarmDialog(
                                     label = null, // You might want to add a TextField for the label
                                     hour = timePickerState.hour,
                                     minute = timePickerState.minute,
-                                    isActive = true,
+                                    isActive = false,
                                     days = "0000000", // Add UI for selecting days
                                     toneUri = selectedToneUri,
                                     vibrate = false // Add UI for vibrate toggle

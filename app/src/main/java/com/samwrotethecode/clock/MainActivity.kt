@@ -34,22 +34,32 @@ import androidx.navigation.compose.rememberNavController
 import com.samwrotethecode.clock.ui.navigation.NavGraph
 import com.samwrotethecode.clock.ui.theme.ClockTheme
 
+// Define the permission steps
+private enum class PermissionStep {
+    IDLE,
+    REQUEST_SCHEDULE_EXACT_ALARM,
+    REQUEST_POST_NOTIFICATIONS,
+    ALL_PERMISSIONS_CHECKED
+}
+
 class MainActivity : ComponentActivity() {
+
+    private var currentPermissionStep by mutableStateOf(PermissionStep.IDLE)
 
     private val requestScheduleExactAlarmPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
-            // No Sdk check needed here as minSdk is 31
             val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
             if (alarmManager.canScheduleExactAlarms()) {
-                Toast.makeText(this, "Schedule exact alarm permission granted.", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(this, "Precise alarm permission granted.", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(
                     this,
-                    "Schedule exact alarm permission is still not granted.",
+                    "Precise alarm permission is still not granted.",
                     Toast.LENGTH_LONG
                 ).show()
             }
+            // Proceed to the next permission step
+            currentPermissionStep = PermissionStep.REQUEST_POST_NOTIFICATIONS
         }
 
     private val requestNotificationPermissionLauncher =
@@ -57,9 +67,11 @@ class MainActivity : ComponentActivity() {
             if (isGranted) {
                 Toast.makeText(this, "Notification permission granted.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Notification permission is not granted.", Toast.LENGTH_LONG)
+                Toast.makeText(this, "Notification permission not granted.", Toast.LENGTH_LONG)
                     .show()
             }
+            // All permissions have been requested
+            currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,45 +81,90 @@ class MainActivity : ComponentActivity() {
         setContent {
             ClockTheme {
                 val navController = rememberNavController()
-                var showExactAlarmPermissionRationaleDialog by remember { mutableStateOf(false) }
-                var showNotificationPermissionRationaleDialog by remember { mutableStateOf(false) }
                 val context = LocalContext.current
 
+                var showScheduleExactAlarmRationaleDialog by remember { mutableStateOf(false) }
+                var showNotificationPermissionRationaleDialog by remember { mutableStateOf(false) }
+
+                // Start the permission checking process once
                 LaunchedEffect(Unit) {
-                    // Exact Alarm Permission Check - No Sdk check needed here as minSdk is 31
-                    val alarmManager =
-                        context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    if (!alarmManager.canScheduleExactAlarms()) {
-                        showExactAlarmPermissionRationaleDialog = true
+                    if (currentPermissionStep == PermissionStep.IDLE) {
+                        currentPermissionStep = PermissionStep.REQUEST_SCHEDULE_EXACT_ALARM
                     }
+                }
 
-                    // Notification Permission Check (Android 13+)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        when {
-                            ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS
-                            ) == PackageManager.PERMISSION_GRANTED -> {
-                                // Permission is already granted
+                LaunchedEffect(currentPermissionStep) {
+                    when (currentPermissionStep) {
+                        PermissionStep.REQUEST_SCHEDULE_EXACT_ALARM -> {
+                            val alarmManager =
+                                context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                            if (!alarmManager.canScheduleExactAlarms()) {
+                                showScheduleExactAlarmRationaleDialog = true
+                            } else {
+                                // Permission already granted, move to next step
+                                currentPermissionStep = PermissionStep.REQUEST_POST_NOTIFICATIONS
                             }
+                        }
 
-                            shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
-                                showNotificationPermissionRationaleDialog = true
-                            }
+                        PermissionStep.REQUEST_POST_NOTIFICATIONS -> {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                when {
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED -> {
+                                        // Permission already granted, all done
+                                        currentPermissionStep =
+                                            PermissionStep.ALL_PERMISSIONS_CHECKED
+                                    }
 
-                            else -> {
-                                // Directly request the permission
-                                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                                        showNotificationPermissionRationaleDialog = true
+                                    }
+
+                                    else -> {
+                                        // Directly request the permission
+                                        requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                }
+                            } else {
+                                // Not needed for older SDKs
+                                currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
                             }
+                        }
+
+                        PermissionStep.ALL_PERMISSIONS_CHECKED -> {
+                            Log.d("MainActivity", "All permissions checks are done.")
+                        }
+
+                        PermissionStep.IDLE -> {
+                            // Initial state, waiting for LaunchedEffect(Unit) to kick things off.
                         }
                     }
                 }
 
-                if (showExactAlarmPermissionRationaleDialog) {
+                // Main app UI - always present, dialogs will overlay
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    NavGraph(navController = navController)
+                }
+
+                if (showScheduleExactAlarmRationaleDialog) {
                     ScheduleExactAlarmPermissionDialog(
-                        onDismiss = { showExactAlarmPermissionRationaleDialog = false },
+                        onDismiss = {
+                            showScheduleExactAlarmRationaleDialog = false
+                            // User dismissed, move to next permission check
+                            currentPermissionStep = PermissionStep.REQUEST_POST_NOTIFICATIONS
+                            Toast.makeText(
+                                context,
+                                "Precise alarm scheduling is recommended for optimal functionality.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        },
                         onConfirm = {
-                            showExactAlarmPermissionRationaleDialog = false
+                            showScheduleExactAlarmRationaleDialog = false
                             val intent =
                                 Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
                                     data = Uri.fromParts("package", packageName, null)
@@ -117,13 +174,13 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 Toast.makeText(
                                     context,
-                                    "Could not open settings for exact alarms.",
+                                    "Could not open settings for precise alarms.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 val fallbackIntent =
                                     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                                 fallbackIntent.data = Uri.fromParts("package", packageName, null)
-                                requestScheduleExactAlarmPermissionLauncher.launch(fallbackIntent)
+                                requestScheduleExactAlarmPermissionLauncher.launch(fallbackIntent) // Still use launcher to continue flow
                             }
                         }
                     )
@@ -131,43 +188,25 @@ class MainActivity : ComponentActivity() {
 
                 if (showNotificationPermissionRationaleDialog) {
                     NotificationPermissionRationaleDialog(
-                        onDismiss = { showNotificationPermissionRationaleDialog = false },
+                        onDismiss = {
+                            showNotificationPermissionRationaleDialog = false
+                            // User dismissed, all permission checks done for this round
+                            currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
+                            Toast.makeText(
+                                context,
+                                "Notifications are recommended to ensure you see your alarms.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        },
                         onConfirm = {
                             showNotificationPermissionRationaleDialog = false
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                // Option 1: Guide to settings
-                                val intent =
-                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                                    }
-                                if (intent.resolveActivity(packageManager) != null) {
-                                    startActivity(intent) // Not using launcher as it's for settings
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Could not open notification settings.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    // Fallback or direct to app info
-                                    val fallbackIntent =
-                                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                    fallbackIntent.data =
-                                        Uri.fromParts("package", packageName, null)
-                                    startActivity(fallbackIntent)
-                                }
-                                // Option 2: Re-request (less ideal if rationale was already shown and denied)
-                                // requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                // Should not happen if logic is correct, but as a safeguard:
+                                currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
                             }
                         }
-                    )
-                }
-
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NavGraph(
-                        navController = navController
                     )
                 }
             }
@@ -176,21 +215,45 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Re-check exact alarm permission - No Sdk check needed here as minSdk is 31
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (!alarmManager.canScheduleExactAlarms()) {
-            Log.w("MainActivity", "SCHEDULE_EXACT_ALARM permission not granted onResume.")
-        }
 
-        // Re-check notification permission (optional, can be noisy)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.w("MainActivity", "POST_NOTIFICATIONS permission not granted onResume.")
-                // Consider if you want to prompt again or just note it.
+        Log.d("MainActivity", "onResume check. Current step: $currentPermissionStep")
+
+        // Only try to advance state if permissions are actively being sought
+        if (currentPermissionStep != PermissionStep.IDLE && currentPermissionStep != PermissionStep.ALL_PERMISSIONS_CHECKED) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val canScheduleExact = alarmManager.canScheduleExactAlarms()
+
+            if (currentPermissionStep == PermissionStep.REQUEST_SCHEDULE_EXACT_ALARM) {
+                if (canScheduleExact) {
+                    Log.d(
+                        "MainActivity",
+                        "onResume: Exact alarm permission granted externally. Advancing."
+                    )
+                    currentPermissionStep = PermissionStep.REQUEST_POST_NOTIFICATIONS
+                } else {
+                    Log.d("MainActivity", "onResume: Exact alarm permission still not granted.")
+                }
+            } else if (currentPermissionStep == PermissionStep.REQUEST_POST_NOTIFICATIONS) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val hasNotificationPerm = ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasNotificationPerm) {
+                        Log.d(
+                            "MainActivity",
+                            "onResume: Notification permission granted externally. Advancing."
+                        )
+                        currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
+                    } else {
+                        Log.d(
+                            "MainActivity",
+                            "onResume: Notification permission still not granted."
+                        )
+                    }
+                } else { // Below TIRAMISU, notification perm not needed for this step.
+                    currentPermissionStep = PermissionStep.ALL_PERMISSIONS_CHECKED
+                }
             }
         }
     }
@@ -203,8 +266,8 @@ fun ScheduleExactAlarmPermissionDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Schedule Alarms Permission") },
-        text = { Text("This app needs permission to schedule exact alarms to function correctly. Please grant this permission in the app settings.") },
+        title = { Text("Enable Precise Alarms") },
+        text = { Text("To ensure your alarms ring at the exact time you set, this app needs permission to schedule precise alarms. This is crucial for the core functionality of the alarm clock. Please tap 'Open Settings' to grant this permission.") },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text("Open Settings")
@@ -212,7 +275,7 @@ fun ScheduleExactAlarmPermissionDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Later")
+                Text("Maybe Later")
             }
         }
     )
@@ -225,16 +288,16 @@ fun NotificationPermissionRationaleDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Notification Permission Required") },
-        text = { Text("This app needs permission to send notifications to alert you about your alarms. Please grant this permission in the app settings.") },
+        title = { Text("Allow Notifications") },
+        text = { Text("To ensure you don't miss your important alarms, please allow this app to send you notifications. This will allow you to see upcoming alarm alerts, and to dismiss or snooze them directly from the notification. Tap 'Allow' to grant permission.") },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Open Settings")
+                Text("Allow")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Later")
+                Text("Not Now")
             }
         }
     )
