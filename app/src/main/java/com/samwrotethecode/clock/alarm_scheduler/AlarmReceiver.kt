@@ -3,7 +3,6 @@ package com.samwrotethecode.clock.alarm_scheduler
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -36,16 +35,17 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        Log.d("AlarmReceiver", "Received action: ${intent.action} for alarm ID: $alarmId. Starting service.")
+        Log.d(
+            "AlarmReceiver",
+            "Received action: ${intent.action} for alarm ID: $alarmId. Starting service."
+        )
 
         // For triggering an alarm, it must be a foreground service.
         // For dismissing, a regular startService is fine, but for consistency and potential future
         // operations during dismiss, startForegroundService can also be used if the service
         // calls startForeground() quickly.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
-        }
+
+        context.startForegroundService(serviceIntent)
+
     }
 }

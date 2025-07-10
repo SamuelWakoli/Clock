@@ -77,14 +77,29 @@ class AlarmService : Service() {
 
         val action = intent.action
         val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
-        val alarmLabel = intent.getStringExtra(EXTRA_ALARM_LABEL) ?: "Alarm"
+        // val alarmLabel = intent.getStringExtra(EXTRA_ALARM_LABEL) ?: "Alarm" // Keep for later use
 
         Log.d(TAG, "onStartCommand received action: $action for alarmId: $alarmId")
 
         when (action) {
             ACTION_TRIGGER_ALARM -> {
                 if (alarmId != -1) {
-                    handleTriggerAlarm(alarmId)
+                    // Call startForeground immediately with a placeholder notification
+                    val placeholderNotification = NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle("Alarm Starting...")
+                        .setContentText("Loading alarm details.")
+                        .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this drawable exists
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .build()
+                    try {
+                        startForeground(alarmId, placeholderNotification) // Use alarmId as notification ID
+                        Log.d(TAG, "Placeholder foreground notification shown for alarmId: $alarmId")
+                        // Now proceed to handle the alarm details asynchronously
+                        handleTriggerAlarm(alarmId)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "CRITICAL: Error starting foreground with placeholder: ${e.message}", e)
+                        stopSelf(startId) // Stop if we can't even start foreground
+                    }
                 } else {
                     Log.e(TAG, "TRIGGER_ALARM action received with invalid alarmId. Stopping.")
                     stopSelf(startId)
@@ -96,8 +111,9 @@ class AlarmService : Service() {
             }
 
             ACTION_SNOOZE_ALARM -> {
+                 val alarmLabelForSnooze = intent.getStringExtra(EXTRA_ALARM_LABEL) ?: "Alarm"
                 if (alarmId != -1) {
-                    handleSnoozeAlarm(alarmId, alarmLabel, startId)
+                    handleSnoozeAlarm(alarmId, alarmLabelForSnooze, startId)
                 } else {
                     Log.e(TAG, "SNOOZE_ALARM action received with invalid alarmId. Stopping.")
                     stopSelf(startId)
@@ -120,10 +136,10 @@ class AlarmService : Service() {
                     TAG,
                     "Alarm $alarmId not found or not active. Stopping service for this trigger."
                 )
-                // If this specific alarm instance was meant to start the service, stop it.
-                // However, another alarm might be ringing, so check currentAlarmId.
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(alarmId) // Remove placeholder if alarm is invalid
                 if (currentAlarmId == alarmId || currentAlarmId == -1) {
-                    stopSelf() // Use stopSelf() without startId as it's in a coroutine
+                    stopSelf()
                 }
                 return@launch
             }
@@ -132,6 +148,7 @@ class AlarmService : Service() {
             stopCurrentRingtone() // Stop any previous ringtone
             currentAlarmId = alarmId
             startRingtone(alarmItem.toneUri)
+            // showNotification will now update the existing foreground notification
             showNotification(alarmId, alarmItem.label ?: "Alarm")
 
             // Reschedule or deactivate
@@ -150,12 +167,7 @@ class AlarmService : Service() {
         stopCurrentRingtone()
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(alarmId) // Use alarmId as notification ID
-
-        // Consider stopping the service only if this was the alarm that kept it alive
-        // For simplicity, we stop if any dismiss comes. If multiple alarms use the same service instance,
-        // this might stop it prematurely for other active alarms.
-        // A more robust solution involves reference counting or ensuring one service instance per alarm.
+        notificationManager.cancel(alarmId)
         stopSelf(startId)
     }
 
@@ -169,42 +181,17 @@ class AlarmService : Service() {
         serviceScope.launch {
             val originalAlarm = alarmRepository.getAlarm(alarmId).firstOrNull()
             if (originalAlarm != null) {
-                // Create a temporary alarm item for snooze
                 val snoozeTimeMillis =
                     System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(SNOOZE_DURATION_MINUTES)
                 val snoozeDateTime = java.time.Instant.ofEpochMilli(snoozeTimeMillis)
                     .atZone(java.time.ZoneId.systemDefault())
 
-                // Create a temporary, non-repeating alarm item for the snooze
-                // Using a high, unlikely ID for the snooze alarm to avoid collision, or manage it better.
-                // For a robust snooze, you might want to store snooze details or use a different mechanism.
-                // Here, we just schedule a new one-time alarm.
-// TODO:
-                val snoozeAlarmItem = AlarmDatabaseItem(
-                    id = originalAlarm.id, // Keep original ID for re-fetching details if needed by scheduler, or for label
-                    hour = snoozeDateTime.hour,
-                    minute = snoozeDateTime.minute,
-                    label = "Snoozed: ${originalAlarm.label ?: alarmLabel}",
-                    isActive = true,
-                    days = "0000000", // Snooze is one-time
-                    toneUri = originalAlarm.toneUri, // Use original tone
-                    vibrate = originalAlarm.vibrate
-                )
-                // The AppAlarmScheduler needs to be able to schedule based on absolute time for snooze.
-                // For now, let's assume it can. Or, modify AppAlarmScheduler to take millis.
-                // This is a simplified snooze. A proper snooze might involve creating a temporary alarm
-                // or just directly using AlarmManager.setExactAndAllowWhileIdle with a new PendingIntent.
-
                 Log.d(TAG, "Attempting to schedule snooze for alarm $alarmId at $snoozeDateTime")
-                // For simplicity, we create a new alarm that's a copy but with new time
-                // This is NOT ideal as it doesn't use the existing `scheduleAlarm` logic correctly for snooze
-                // A better way would be to pass the snooze trigger time directly to AlarmManager
+                
                 val snoozeIntent = Intent(applicationContext, AlarmReceiver::class.java).apply {
-                    action = ACTION_TRIGGER_ALARM
-                    putExtra(
-                        EXTRA_ALARM_ID,
-                        originalAlarm.id
-                    ) // Important: use original ID for re-trigger
+                    action = ACTION_TRIGGER_ALARM 
+                    putExtra(EXTRA_ALARM_ID, originalAlarm.id) 
+                    putExtra(EXTRA_ALARM_LABEL, "Snoozed: ${originalAlarm.label ?: alarmLabel}")
                 }
                 val snoozePendingIntent = PendingIntent.getBroadcast(
                     applicationContext,
@@ -216,6 +203,7 @@ class AlarmService : Service() {
                     getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                     Log.w(TAG, "Cannot schedule exact snooze alarm, permission missing.")
+                    Toast.makeText(applicationContext, "Cannot schedule snooze. Exact alarm permission missing.", Toast.LENGTH_LONG).show()
                 } else {
                     alarmManager.setExactAndAllowWhileIdle(
                         android.app.AlarmManager.RTC_WAKEUP,
@@ -223,11 +211,12 @@ class AlarmService : Service() {
                         snoozePendingIntent
                     )
                     Log.i(TAG, "Snooze scheduled for alarm $alarmId at $snoozeDateTime")
+                     Toast.makeText(applicationContext, "Alarm snoozed for $SNOOZE_DURATION_MINUTES minutes.", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 Log.e(TAG, "Original alarm $alarmId not found for snooze.")
             }
-            stopSelf(startId) // Stop service after processing snooze
+            stopSelf(startId) 
         }
     }
 
@@ -240,7 +229,7 @@ class AlarmService : Service() {
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             }
 
-            if (toneUri == null) { // Fallback if default is also null
+            if (toneUri == null) { 
                 Log.w(TAG, "Alarm tone URI is null, and default is null. Cannot play.")
                 return
             }
@@ -270,7 +259,7 @@ class AlarmService : Service() {
         }
         val dismissPendingIntent = PendingIntent.getBroadcast(
             this,
-            alarmId, // Use alarmId for unique PendingIntent request code for dismiss
+            alarmId, 
             dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -278,64 +267,51 @@ class AlarmService : Service() {
         val snoozeIntent = Intent(this, AlarmReceiver::class.java).apply {
             action = ACTION_SNOOZE_ALARM
             putExtra(EXTRA_ALARM_ID, alarmId)
-            putExtra(EXTRA_ALARM_LABEL, alarmLabel) // Pass label for snoozed notification
+            putExtra(EXTRA_ALARM_LABEL, alarmLabel) 
         }
         val snoozePendingIntent = PendingIntent.getBroadcast(
             this,
-            alarmId + 1, // Unique request code for snooze
+            alarmId + 10000, // Use the same unique request code as in handleSnoozeAlarm for consistency if needed, though for notification action it can be different. Let's make it distinct for clarity.
             snoozeIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // TODO: For a full-screen alarm, you would create a PendingIntent to launch an Activity here
-        // val fullScreenIntent = Intent(this, YourAlarmActivity::class.java).apply {
-        // putExtra(EXTRA_ALARM_ID, alarmId)
-        // flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        // }
-        // val fullScreenPendingIntent = PendingIntent.getActivity(this, alarmId + 2,
-        // fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
-
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Alarm Clock")
             .setContentText(alarmLabel)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your alarm icon
+            .setSmallIcon(R.drawable.ic_launcher_foreground) 
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setOngoing(true) // Makes the notification non-swipeable until dismissed by action
-            .setAutoCancel(false) // Notification should be explicitly dismissed
-            // .setFullScreenIntent(fullScreenPendingIntent, true) // Uncomment for full-screen
+            .setOngoing(true) 
+            .setAutoCancel(false) 
             .addAction(0, "Dismiss", dismissPendingIntent)
             .addAction(0, "Snooze (${SNOOZE_DURATION_MINUTES} min)", snoozePendingIntent)
             .build()
 
         try {
-            startForeground(alarmId, notification) // Use alarmId as notification ID
-            Log.d(TAG, "Foreground notification shown for alarmId: $alarmId")
+            // This will update the existing foreground notification if alarmId is the same
+            startForeground(alarmId, notification)
+            Log.d(TAG, "Foreground notification updated/shown for alarmId: $alarmId")
         } catch (e: Exception) {
-            Log.e(TAG, "Error starting foreground service: ${e.message}")
-            // Fallback for older Android versions if foreground service type is the issue (rare with mediaPlayback)
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                val notificationManager =
-                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(alarmId, notification)
-            }
+            Log.e(TAG, "Error updating/starting foreground service notification: ${e.message}", e)
         }
     }
 
 
     private fun createNotificationChannel() {
-        val name = "Alarm Clock Channel"
-        val descriptionText = "Channel for alarm clock notifications"
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-            description = descriptionText
-            setSound(null, null) // Sound is handled by the service directly
-            enableVibration(true) // Or handle vibration manually with Ringtone/Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Alarm Clock Channel"
+            val descriptionText = "Channel for alarm clock notifications"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+                setSound(null, null) 
+                enableVibration(true) 
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
         }
-        val notificationManager: NotificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -345,7 +321,7 @@ class AlarmService : Service() {
     override fun onDestroy() {
         Log.d(TAG, "AlarmService destroyed.")
         stopCurrentRingtone()
-        job.cancel() // Cancel coroutines
+        job.cancel() 
         super.onDestroy()
     }
 }
