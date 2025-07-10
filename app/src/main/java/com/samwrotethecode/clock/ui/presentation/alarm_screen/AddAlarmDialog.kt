@@ -57,7 +57,7 @@ fun AddAlarmDialog(
     val context = LocalContext.current
 
     var selectedToneUri by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedToneName by rememberSaveable { mutableStateOf("Default") }
+    var selectedToneName by rememberSaveable { mutableStateOf<String?>(null) }
 
     val ringtonePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -125,7 +125,7 @@ fun AddAlarmDialog(
                     }
                     ringtonePickerLauncher.launch(intent)
                 }) {
-                    Text("Select Tone: $selectedToneName")
+                    if (selectedToneUri == null) Text("Select Tone") else Text("Select Tone: $selectedToneName")
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

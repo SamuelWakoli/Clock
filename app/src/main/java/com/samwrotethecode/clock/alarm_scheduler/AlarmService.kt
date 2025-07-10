@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class AlarmService : Service() {
@@ -201,10 +202,12 @@ class AlarmService : Service() {
                 )
                 val alarmManager =
                     getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                // Build.VERSION.SDK_INT >= Build.VERSION_CODES.S is redundant as minSdk is 31
+                
                 if (!alarmManager.canScheduleExactAlarms()) {
                     Log.w(TAG, "Cannot schedule exact snooze alarm, permission missing.")
-                    Toast.makeText(applicationContext, "Cannot schedule snooze. Exact alarm permission missing.", Toast.LENGTH_LONG).show()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(applicationContext, "Cannot schedule snooze. Exact alarm permission missing.", Toast.LENGTH_LONG).show()
+                    }
                 } else {
                     alarmManager.setExactAndAllowWhileIdle(
                         android.app.AlarmManager.RTC_WAKEUP,
@@ -212,7 +215,9 @@ class AlarmService : Service() {
                         snoozePendingIntent
                     )
                     Log.i(TAG, "Snooze scheduled for alarm $alarmId at $snoozeDateTime")
-                     Toast.makeText(applicationContext, "Alarm snoozed for $SNOOZE_DURATION_MINUTES minutes.", Toast.LENGTH_SHORT).show()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(applicationContext, "Alarm snoozed for $SNOOZE_DURATION_MINUTES minutes.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } else {
                 Log.e(TAG, "Original alarm $alarmId not found for snooze.")
@@ -241,7 +246,6 @@ class AlarmService : Service() {
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
-                // Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q is redundant as minSdk is 31 (Q is 29)
                 it.isLooping = true
                 it.play()
                 Log.d(TAG, "Ringtone started for alarmId: $currentAlarmId")
@@ -299,7 +303,6 @@ class AlarmService : Service() {
 
 
     private fun createNotificationChannel() {
-        // Build.VERSION.SDK_INT >= Build.VERSION_CODES.O is redundant as minSdk is 31 (O is 26)
         val name = "Alarm Clock Channel"
         val descriptionText = "Channel for alarm clock notifications"
         val importance = NotificationManager.IMPORTANCE_HIGH
