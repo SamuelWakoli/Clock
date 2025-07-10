@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import com.samwrotethecode.clock.data.AlarmDatabaseItem
@@ -136,6 +135,5 @@ class AppAlarmScheduler(private val context: Context) : AlarmScheduler {
         )
         alarmManager.cancel(pendingIntent)
         Log.d("AppAlarmScheduler", "Cancelled alarm id: ${alarmItem.id}")
-        Toast.makeText(context, "Alarm '${alarmItem.label ?: ""}' cancelled", Toast.LENGTH_SHORT).show()
     }
 }
