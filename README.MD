@@ -1,12 +1,18 @@
-###
+# AlarmUI: Minimalist Alarm Clock
 
-<img height="80" src="app\src\main\res\mipmap-xxxhdpi\ic_launcher_round.webp" title="App logo" width="80"/>
+<img height="80" src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" title="AlarmUI Logo" width="80"/>
 
-# Clock: Alarm UI
+AlarmUI is a lightweight Android application offering a sleek, retro-inspired alarm clock interface. Designed with Material Design for a modern, intuitive feel and powered by Android’s Room database for robust data persistence, it prioritizes core alarm functionality with a compact 1.21 MB footprint, ensuring no bloatware. The alarm feature is operational but under active refinement to address minor quirks and enhance performance.
 
-Alarm UI offers a unique and customizable experience for users who appreciate the aesthetic of classic alarm clock. This app as stated by its name (Alarm UI) is meant to illustrate the UI for the classic alarm
-clock. Future improvements may guarantee full functionality of the app. _[Test it on PlayStore](https://play.google.com/store/apps/details?id=com.samwrotethecode.clock)_
+Originally developed as an exploration of Room database integration, AlarmUI evolved into a public release on the Google Play Store. Future updates aim to deliver a fully polished, seamless alarm clock experience.
 
-_This app may show logical errors when trying to excecute alarms._
+**[Download on Google Play](https://play.google.com/store/apps/details?id=com.samwrotethecode.clock)**
 
-<img src="screenshots\home.png" title="Home screen" width="250" height="520"/>  <img src="screenshots\alarm_detail.png" title="Alarm detail" width="250" height="520"/>  <img src="screenshots\add_alarm.png" title="Add alarm dialog" width="250" height="520"/>
+## Screenshots
+
+| Home Screen | Alarm Details | Add Alarm |
+|-------------|---------------|-----------|
+| <img src="screenshots/home.png" title="Home Screen" width="250" height="520"/> | <img src="screenshots/alarm_detail.png" title="Alarm Details" width="250" height="520"/> | <img src="screenshots/add_alarm.png" title="Add Alarm Dialog" width="250" height="520"/> |
+
+## Feedback
+Contributions and feedback are welcome to help refine AlarmUI. Submit issues or suggestions via GitHub or share your experience through the Play Store.
